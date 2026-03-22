@@ -447,9 +447,31 @@ tr:hover td{background:var(--surf2)}
   .stats-grid{grid-template-columns:1fr}
   .gstat-grid{grid-template-columns:1fr 1fr}
 }
+/* ── UPDATE BANNER ── */
+#update-banner{
+  display:none;position:fixed;top:0;left:0;right:0;z-index:500;
+  background:var(--gold);color:#08090d;
+  padding:10px 18px;font-size:13px;font-weight:600;
+  align-items:center;justify-content:center;gap:12px;
+  box-shadow:0 2px 12px rgba(0,0,0,.3);
+}
+#update-banner.show{display:flex}
+#update-banner button{
+  background:#08090d;color:var(--gold);border:none;border-radius:6px;
+  padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;transition:opacity .15s;flex-shrink:0;
+}
+#update-banner button:hover{opacity:.85}
 </style>
 </head>
 <body>
+
+<!-- ── UPDATE BANNER ── -->
+<div id="update-banner">
+  ✦ A new version is available
+  <button onclick="location.reload(true)">Refresh now</button>
+  <button onclick="document.getElementById('update-banner').classList.remove('show')" style="background:none;color:#08090d;opacity:.6;padding:5px 6px">✕</button>
+</div>
 
 <!-- ── AUTH SCREEN ── -->
 <div id="auth-screen">
@@ -813,6 +835,10 @@ tr:hover td{background:var(--surf2)}
 const SUPABASE_URL = 'https://xhhcbvabfdhpiujgaqvz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoaGNidmFiZmRocGl1amdhcXZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNzQ2ODksImV4cCI6MjA4OTc1MDY4OX0.qiIvhYtj8bY7-dgcbKxF_ugkDH3ITBLa-8xCLhWgUbI';
 // ═══════════════════════════════════════════════════════
+
+// ── VERSION — increment this (e.g. 2, 3, 4…) each time you upload a new file ──
+const VERSION = 1;
+// ════════════════════════════════════════════════════════
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1815,7 +1841,27 @@ function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('o
 function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-backdrop').classList.remove('open'); }
 
 
+// ── VERSION POLLING ────────────────────────────────────
+// Fetches index.html every 5 minutes and compares VERSION.
+// If the deployed file has a higher version, shows the update banner.
+function startVersionPolling() {
+  const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  async function check() {
+    try {
+      const res = await fetch(location.href + '?_=' + Date.now(), {cache:'no-store'});
+      const txt = await res.text();
+      const match = txt.match(/const VERSION\s*=\s*(\d+)/);
+      if(match && parseInt(match[1]) > VERSION) {
+        document.getElementById('update-banner').classList.add('show');
+      }
+    } catch(e) { /* silently ignore network errors */ }
+  }
+  // First check after 5 min, then repeat
+  setTimeout(()=>{ check(); setInterval(check, CHECK_INTERVAL); }, CHECK_INTERVAL);
+}
+
 init();
+startVersionPolling();
 </script>
 </body>
 </html>
