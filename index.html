@@ -837,7 +837,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // ═══════════════════════════════════════════════════════
 
 // ── VERSION — increment this (e.g. 2, 3, 4…) each time you upload a new file ──
-const VERSION = 1;
+const VERSION = 2;
 // ════════════════════════════════════════════════════════
 
 const { createClient } = supabase;
@@ -1442,7 +1442,7 @@ function buildMultiLineSeries(sessions, keyFn, labelFn, allKeys) {
       backgroundColor: col.color+'18',
       pointBackgroundColor: col.color,
       borderWidth: 2,
-      tension: 0.35,
+      tension: 0,
       pointRadius: 3,
       pointHoverRadius: 6,
       spanGaps: true,
