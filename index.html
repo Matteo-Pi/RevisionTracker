@@ -142,7 +142,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
 .mb16{margin-bottom:16px}.mb20{margin-bottom:20px}.mb24{margin-bottom:24px}
 
 /* ── SUBJECT CARDS ── */
-.subj-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.subj-grid{display:flex;flex-direction:column;gap:14px}
 .subj-card{background:var(--surf);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .subj-hdr{display:flex;align-items:center;gap:11px;padding:15px 17px;cursor:pointer;transition:background .15s}
 .subj-hdr:hover{background:var(--surf2)}
@@ -169,6 +169,20 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
   transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif;
 }
 .tadd-btn:hover{border-color:var(--bh);color:var(--text);background:var(--surf2)}
+.sdel-btn{
+  background:none;border:none;cursor:pointer;color:var(--muted);padding:3px 5px;
+  border-radius:5px;font-size:13px;transition:all .15s;flex-shrink:0;line-height:1;
+  opacity:0;
+}
+.subj-hdr:hover .sdel-btn{opacity:1}
+.sdel-btn:hover{color:var(--red);background:var(--redd)}
+.tdel-btn{
+  background:none;border:none;cursor:pointer;color:var(--muted);padding:2px 5px;
+  border-radius:4px;font-size:12px;transition:all .15s;flex-shrink:0;line-height:1;
+  opacity:0;
+}
+.topic-row:hover .tdel-btn{opacity:1}
+.tdel-btn:hover{color:var(--red);background:var(--redd)}
 
 /* ── FORM ── */
 .fg{margin-bottom:16px}
@@ -211,19 +225,42 @@ tr:hover td{background:var(--surf2)}
 .s-high{background:var(--greend);color:var(--green)}
 
 /* ── GRAPH ── */
-.graph-sels{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap}
-.graph-sels>div{min-width:180px}
+.graph-sels{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap;align-items:flex-end}
+.graph-sels>div{min-width:160px}
+.g-mode-toggle{display:flex;background:var(--surf2);border-radius:8px;padding:3px;gap:3px;margin-bottom:18px}
+.g-mode-btn{
+  flex:1;padding:7px 12px;border:none;border-radius:6px;background:none;
+  color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;
+  font-weight:500;cursor:pointer;transition:all .15s;
+}
+.g-mode-btn.active{background:var(--surf);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
 .gstat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
 .gstat{background:var(--surf2);border-radius:8px;padding:12px;text-align:center}
 .gstat-val{font-family:'JetBrains Mono',monospace;font-size:19px;color:var(--text)}
 .gstat-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.6px}
-.chart-wrap{position:relative;height:280px}
+.chart-wrap{position:relative;height:300px}
 .chart-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+.chart-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+.chart-legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim)}
+.chart-legend-line{width:20px;height:3px;border-radius:2px;flex-shrink:0}
+
+/* ── SESSION ROW (log page) ── */
+.sess-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.sess-row:last-child{border-bottom:none}
+.sess-actions{display:flex;gap:4px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.sess-row:hover .sess-actions{opacity:1}
+.sess-act-btn{
+  background:none;border:1px solid var(--border);border-radius:5px;
+  padding:3px 7px;cursor:pointer;font-size:11px;color:var(--muted);
+  font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;
+}
+.sess-act-btn:hover{color:var(--text);border-color:var(--bh)}
+.sess-act-btn.del:hover{color:var(--red);border-color:rgba(248,113,113,.4);background:var(--redd)}
 
 /* ── SUGGESTIONS ── */
 .sug-group{margin-bottom:22px}
 .sug-group-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:9px;display:flex;align-items:center;gap:7px}
-.sug-card{display:flex;align-items:center;gap:13px;background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:12px 15px;margin-bottom:7px;transition:border-color .15s}
+.sug-card{display:flex;align-items:center;gap:13px;background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:12px 15px;margin-bottom:7px;transition:border-color .15s;cursor:pointer}
 .sug-card:hover{border-color:var(--bh)}
 .sug-sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .sug-info{flex:1}
@@ -370,7 +407,6 @@ tr:hover td{background:var(--surf2)}
   /* Stack all 2/4-column grids */
   .stats-grid{grid-template-columns:1fr 1fr;gap:9px}
   .g2{grid-template-columns:1fr}
-  .subj-grid{grid-template-columns:1fr}
   .dash-row{grid-template-columns:1fr}
   .gstat-grid{grid-template-columns:1fr 1fr;gap:8px}
   .graph-sels{flex-direction:column;gap:10px}
@@ -575,21 +611,33 @@ tr:hover td{background:var(--surf2)}
   <div class="page" id="page-graphs">
     <div class="ph"><div><h2>Progress</h2><p>Track your performance over time</p></div></div>
     <div class="card mb20">
+      <!-- Mode toggle -->
+      <div class="g-mode-toggle">
+        <button class="g-mode-btn active" id="gmode-subjects" onclick="setGraphMode('subjects')">By Subject</button>
+        <button class="g-mode-btn" id="gmode-topics" onclick="setGraphMode('topics')">By Topic</button>
+      </div>
+      <!-- Filters row -->
       <div class="graph-sels">
-        <div>
+        <div id="g-subj-wrap">
           <div class="flbl">Subject</div>
-          <select class="fsel" id="g-subj" onchange="updateGraphTopics()"><option value="">All subjects</option></select>
+          <select class="fsel" id="g-subj" onchange="renderGraph()"><option value="">All subjects</option></select>
         </div>
         <div>
-          <div class="flbl">Topic</div>
-          <select class="fsel" id="g-topic" onchange="renderGraph()"><option value="">All topics</option></select>
+          <div class="flbl">Time Period</div>
+          <select class="fsel" id="g-period" onchange="renderGraph()">
+            <option value="30">Last Month</option>
+            <option value="180">Last 6 Months</option>
+            <option value="365">Last Year</option>
+            <option value="0">All Time</option>
+          </select>
         </div>
       </div>
       <div class="gstat-grid" id="g-stats"></div>
       <div class="chart-wrap">
         <canvas id="main-chart"></canvas>
-        <div class="chart-empty" id="chart-empty" style="display:none">No sessions match this filter yet</div>
+        <div class="chart-empty" id="chart-empty" style="display:none">No sessions in this time period yet</div>
       </div>
+      <div class="chart-legend" id="chart-legend"></div>
     </div>
     <div class="card">
       <div class="ctitle">Session History</div>
@@ -600,6 +648,14 @@ tr:hover td{background:var(--surf2)}
   <!-- SUGGESTIONS -->
   <div class="page" id="page-suggestions">
     <div class="ph"><div><h2>Study Suggestions</h2><p>Spaced repetition — topics ranked by urgency</p></div></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+      <div style="min-width:200px">
+        <div class="flbl">Filter by Subject</div>
+        <select class="fsel" id="sug-filter-subj" onchange="renderSuggestions()">
+          <option value="">All subjects</option>
+        </select>
+      </div>
+    </div>
     <div id="sug-content"></div>
   </div>  <!-- CALENDAR -->
   <div class="page" id="page-calendar">
@@ -683,6 +739,40 @@ tr:hover td{background:var(--surf2)}
     <div class="modal-actions">
       <button class="btn btn-s" onclick="closeModal('modal-event-detail')">Close</button>
       <button class="btn" style="background:var(--redd);color:var(--red);border:1px solid rgba(248,113,113,.25)" onclick="deleteEvent()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Edit Session -->
+<div class="overlay" id="modal-edit-sess">
+  <div class="modal">
+    <div class="modal-title">Edit Session</div>
+    <div class="fg">
+      <label class="flbl">Subject</label>
+      <select class="fsel" id="es-subj" onchange="updateEditTopics()"><option value="">Select subject…</option></select>
+    </div>
+    <div class="fg">
+      <label class="flbl">Topic</label>
+      <select class="fsel" id="es-topic"><option value="">Select topic…</option></select>
+    </div>
+    <div class="fg">
+      <label class="flbl">Date</label>
+      <input type="date" class="finp" id="es-date">
+    </div>
+    <div class="fg">
+      <label class="flbl">Mark</label>
+      <div class="slider-wrap">
+        <input type="range" class="fslider" id="es-slider" min="0" max="100" value="70" oninput="updateEditMarkDisp(this.value)">
+        <span class="mark-disp" id="es-mark-disp">70%</span>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="flbl">Notes <span style="color:var(--muted);font-size:9px;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <textarea class="ftxt" id="es-notes" style="min-height:58px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeModal('modal-edit-sess')">Cancel</button>
+      <button class="btn btn-p" onclick="saveEditSession()">Save Changes</button>
     </div>
   </div>
 </div>
@@ -967,13 +1057,29 @@ function setSyncStatus(s) {
 const Store = {
   get()        { return appData; },
   addSession(s){ appData.sessions.push(s); scheduleSync(); },
+  deleteSession(id){ appData.sessions=appData.sessions.filter(s=>s.id!==id); scheduleSync(); },
+  updateSession(id, updates){
+    const idx=appData.sessions.findIndex(s=>s.id===id);
+    if(idx!==-1){ appData.sessions[idx]={...appData.sessions[idx],...updates}; scheduleSync(); }
+  },
   addSubject(s){ appData.subjects.push(s); scheduleSync(); },
   addTopic(sid,t){
     const subj = appData.subjects.find(x=>x.id===sid);
     if(subj){ subj.topics.push(t); scheduleSync(); }
   },
   addEvent(e){ if(!appData.events) appData.events=[]; appData.events.push(e); scheduleSync(); },
-  deleteEvent(id){ appData.events=(appData.events||[]).filter(e=>e.id!==id); scheduleSync(); }
+  deleteEvent(id){ appData.events=(appData.events||[]).filter(e=>e.id!==id); scheduleSync(); },
+  deleteSubject(sid){
+    appData.subjects=appData.subjects.filter(s=>s.id!==sid);
+    appData.sessions=appData.sessions.filter(s=>s.subjectId!==sid);
+    scheduleSync();
+  },
+  deleteTopic(sid,tid){
+    const subj=appData.subjects.find(s=>s.id===sid);
+    if(subj) subj.topics=subj.topics.filter(t=>t.id!==tid);
+    appData.sessions=appData.sessions.filter(s=>s.topicId!==tid);
+    scheduleSync();
+  }
 };
 
 // ── SPACED REPETITION ──────────────────────────────────
@@ -1077,21 +1183,25 @@ function renderDashboard() {
 // ── SUBJECTS ───────────────────────────────────────────
 function renderSubjects() {
   const data=Store.get();
+  // Preserve which cards are open
+  const openIds=new Set([...document.querySelectorAll('.subj-card.open')].map(el=>el.dataset.sid));
   const latestByTopic={};
   data.sessions.forEach(s=>{ if(!latestByTopic[s.topicId]||new Date(s.date)>new Date(latestByTopic[s.topicId].date)) latestByTopic[s.topicId]=s; });
   document.getElementById('subj-grid').innerHTML=data.subjects.map(subj=>`
-    <div class="subj-card" id="sc-${subj.id}">
+    <div class="subj-card${openIds.has(subj.id)?' open':''}" id="sc-${subj.id}" data-sid="${subj.id}">
       <div class="subj-hdr" onclick="toggleSubj('${subj.id}')">
         <span class="sdot" style="background:${subj.color}"></span>
         <span class="sname">${subj.name}</span>
         <span class="scnt">${subj.topics.length}</span>
         <span class="schev">▼</span>
+        <button class="sdel-btn" onclick="event.stopPropagation();confirmDeleteSubject('${subj.id}','${subj.name.replace(/'/g,"\\'")}')">✕</button>
       </div>
       <div class="topics-list">
         ${subj.topics.map(t=>{const ls=latestByTopic[t.id];return `<div class="topic-row">
           <span class="tcat">${t.category}</span>
           <span class="tname">${t.name}</span>
-          ${ls?`<span class="sb ${scCls(ls.mark)}" style="font-size:10.5px">${ls.mark}%</span><span class="tdate">${fmtDate(ls.date)}</span>`:'<span class="tdate">Not studied</span>'}
+          ${ls?`<span class="sb ${scCls(ls.mark)}" style="font-size:10.5px">${ls.mark}%</span><span class="tdate">${fmtDate(ls.date)}</span>`:'<span class="tdate" style="flex:0">Not studied</span>'}
+          <button class="tdel-btn" onclick="confirmDeleteTopic('${subj.id}','${t.id}','${t.name.replace(/'/g,"\\'")}')">✕</button>
         </div>`}).join('')}
         <div style="padding:6px 17px 10px">
           <button class="tadd-btn" onclick="openTopicModal('${subj.id}')">+ Add topic</button>
@@ -1102,7 +1212,31 @@ function renderSubjects() {
 }
 function toggleSubj(id){ document.getElementById('sc-'+id).classList.toggle('open'); }
 
+function confirmDeleteSubject(sid, name) {
+  if(!confirm(`Delete "${name}" and all its sessions? This cannot be undone.`)) return;
+  Store.deleteSubject(sid);
+  toast(`${name} deleted`);
+  renderSubjects();
+}
+function confirmDeleteTopic(sid, tid, name) {
+  if(!confirm(`Delete "${name}" and all its logged sessions? This cannot be undone.`)) return;
+  Store.deleteTopic(sid, tid);
+  toast(`${name} deleted`);
+  renderSubjects();
+}
+
 // ── LOG SESSION ────────────────────────────────────────
+function navigateToLog(subjId, topicId) {
+  navigate('log');
+  closeSidebar();
+  // Pre-fill after render completes
+  if(subjId) {
+    document.getElementById('log-subj').value = subjId;
+    updateLogTopics();
+    if(topicId) document.getElementById('log-topic').value = topicId;
+  }
+}
+
 function renderLog() {
   const data=Store.get();
   document.getElementById('log-date').value=new Date().toISOString().split('T')[0];
@@ -1142,50 +1276,168 @@ function logSession() {
 }
 function renderLogRecent() {
   const data=Store.get();
-  const recent=[...data.sessions].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
+  const recent=[...data.sessions].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20);
   const el=document.getElementById('log-recent');
   if(!el) return;
-  el.innerHTML=recent.length?recent.map(s=>{const f=getTopic(data,s.topicId);return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
-    <div style="flex:1">
-      <div style="font-weight:600;font-size:12.5px">${f?f.topic.name:'—'}</div>
-      <div style="font-size:11px;color:var(--muted)">${f?f.subj.name:'—'} · ${fmtDate(s.date)}${s.notes?` · <i style="color:var(--dim)">${s.notes.slice(0,60)}${s.notes.length>60?'…':''}</i>`:''}</div>
-    </div>
-    <span class="sb ${scCls(s.mark)}">${s.mark}%</span>
-  </div>`;}).join(''):'<div class="empty">No sessions yet</div>';
+  el.innerHTML=recent.length?recent.map(s=>{
+    const f=getTopic(data,s.topicId);
+    return `<div class="sess-row">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f?f.topic.name:'—'}</div>
+        <div style="font-size:11px;color:var(--muted)">${f?f.subj.name:'—'} · ${fmtDate(s.date)}${s.notes?` · <i style="color:var(--dim)">${s.notes.slice(0,50)}${s.notes.length>50?'…':''}</i>`:''}</div>
+      </div>
+      <span class="sb ${scCls(s.mark)}">${s.mark}%</span>
+      <div class="sess-actions">
+        <button class="sess-act-btn" onclick="openEditSession('${s.id}')">Edit</button>
+        <button class="sess-act-btn del" onclick="deleteSession('${s.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty">No sessions yet</div>';
+}
+
+let editingSessionId = null;
+function openEditSession(id) {
+  const data=Store.get();
+  const s=data.sessions.find(x=>x.id===id);
+  if(!s) return;
+  editingSessionId=id;
+  // Populate subjects
+  document.getElementById('es-subj').innerHTML='<option value="">Select subject…</option>'+
+    data.subjects.map(sub=>`<option value="${sub.id}">${sub.name}</option>`).join('');
+  document.getElementById('es-subj').value=s.subjectId;
+  updateEditTopics();
+  document.getElementById('es-topic').value=s.topicId;
+  document.getElementById('es-date').value=s.date;
+  document.getElementById('es-slider').value=s.mark;
+  updateEditMarkDisp(s.mark);
+  document.getElementById('es-notes').value=s.notes||'';
+  document.getElementById('modal-edit-sess').classList.add('open');
+}
+function updateEditTopics() {
+  const data=Store.get(), sid=document.getElementById('es-subj').value;
+  const subj=data.subjects.find(s=>s.id===sid);
+  const sel=document.getElementById('es-topic');
+  if(!subj){ sel.innerHTML='<option value="">Select topic…</option>'; return; }
+  const cats={};
+  subj.topics.forEach(t=>{ if(!cats[t.category]) cats[t.category]=[]; cats[t.category].push(t); });
+  sel.innerHTML='<option value="">Select topic…</option>'+
+    Object.entries(cats).map(([cat,ts])=>`<optgroup label="${cat}">${ts.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</optgroup>`).join('');
+}
+function updateEditMarkDisp(v) {
+  v=parseInt(v);
+  document.getElementById('es-mark-disp').textContent=v+'%';
+  document.getElementById('es-slider').style.background=`linear-gradient(to right,${scCol(v)} ${v}%,#1f2235 ${v}%)`;
+}
+function saveEditSession() {
+  const sid=document.getElementById('es-subj').value;
+  const tid=document.getElementById('es-topic').value;
+  const date=document.getElementById('es-date').value;
+  const mark=parseInt(document.getElementById('es-slider').value);
+  const notes=document.getElementById('es-notes').value.trim();
+  if(!sid||!tid||!date){ toast('Please fill in all fields'); return; }
+  Store.updateSession(editingSessionId,{subjectId:sid,topicId:tid,date,mark,notes});
+  closeModal('modal-edit-sess');
+  toast('Session updated ✓');
+  renderLogRecent();
+}
+function deleteSession(id) {
+  if(!confirm('Delete this session? This cannot be undone.')) return;
+  Store.deleteSession(id);
+  toast('Session deleted');
+  renderLogRecent();
 }
 
 // ── GRAPHS ─────────────────────────────────────────────
+let graphMode = 'subjects'; // 'subjects' | 'topics'
+
+function setGraphMode(mode) {
+  graphMode = mode;
+  document.getElementById('gmode-subjects').classList.toggle('active', mode==='subjects');
+  document.getElementById('gmode-topics').classList.toggle('active', mode==='topics');
+  // Show subject selector only in topics mode
+  document.getElementById('g-subj-wrap').style.display = mode==='topics' ? '' : 'none';
+  renderGraph();
+}
+
 function renderGraphs() {
   const data=Store.get();
-  document.getElementById('g-subj').innerHTML='<option value="">All subjects</option>'+
+  document.getElementById('g-subj').innerHTML='<option value="">Select a subject…</option>'+
     data.subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-  document.getElementById('g-topic').innerHTML='<option value="">All topics</option>';
+  // In subjects mode hide the subject picker
+  document.getElementById('g-subj-wrap').style.display = graphMode==='topics' ? '' : 'none';
   renderGraph();
 }
-function updateGraphTopics() {
-  const data=Store.get(), sid=document.getElementById('g-subj').value;
-  const subj=data.subjects.find(s=>s.id===sid);
-  const sel=document.getElementById('g-topic');
-  if(!subj){ sel.innerHTML='<option value="">All topics</option>'; }
-  else {
-    const cats={};
-    subj.topics.forEach(t=>{ if(!cats[t.category]) cats[t.category]=[]; cats[t.category].push(t); });
-    sel.innerHTML='<option value="">All topics</option>'+
-      Object.entries(cats).map(([cat,ts])=>`<optgroup label="${cat}">${ts.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</optgroup>`).join('');
-  }
-  renderGraph();
+
+function getDateCutoff() {
+  const days = parseInt(document.getElementById('g-period').value);
+  if(!days) return null; // all time
+  const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-days);
+  return d;
 }
+
+// Returns sorted unique date strings from a session array, bucketed by week if > 90 days range
+function buildTimeLabels(sessions) {
+  if(!sessions.length) return [];
+  const dates = [...new Set(sessions.map(s=>s.date))].sort();
+  return dates;
+}
+
+// For a set of sessions grouped by some key, compute a rolling average per calendar date
+// Returns { labels: string[], seriesMap: { key: number[] } }
+function buildMultiLineSeries(sessions, keyFn, labelFn, allKeys) {
+  // All unique sorted dates
+  const allDates = [...new Set(sessions.map(s=>s.date))].sort();
+  if(!allDates.length) return { labels:[], datasets:[] };
+
+  // Group sessions: key -> date -> [marks]
+  const grouped = {};
+  allKeys.forEach(k=>{ grouped[k]={}; });
+  sessions.forEach(s=>{
+    const k=keyFn(s); if(!grouped[k]) return;
+    if(!grouped[k][s.date]) grouped[k][s.date]=[];
+    grouped[k][s.date].push(s.mark);
+  });
+
+  // For each key, build cumulative rolling average up to each date
+  // Use expanding window: avg = mean of all sessions for this key up to and including this date
+  const datasets = allKeys.map((k,i)=>{
+    const col = labelFn(k, i);
+    let allMarks = [];
+    const data = allDates.map(d=>{
+      if(grouped[k][d]) allMarks.push(...grouped[k][d]);
+      return allMarks.length ? Math.round(allMarks.reduce((a,b)=>a+b,0)/allMarks.length) : null;
+    });
+    // Only include dataset if it has at least one real point
+    if(data.every(v=>v===null)) return null;
+    return {
+      label: col.label,
+      data,
+      borderColor: col.color,
+      backgroundColor: col.color+'18',
+      pointBackgroundColor: col.color,
+      borderWidth: 2,
+      tension: 0.35,
+      pointRadius: 3,
+      pointHoverRadius: 6,
+      spanGaps: true,
+    };
+  }).filter(Boolean);
+
+  return { labels: allDates.map(d=>fmtDate(d)), datasets };
+}
+
 function renderGraph() {
   const data=Store.get();
-  const sid=document.getElementById('g-subj').value;
-  const tid=document.getElementById('g-topic').value;
-  let sess=[...data.sessions].sort((a,b)=>new Date(a.date)-new Date(b.date));
-  if(sid) sess=sess.filter(s=>s.subjectId===sid);
-  if(tid) sess=sess.filter(s=>s.topicId===tid);
+  const cutoff=getDateCutoff();
+  let allSess=[...data.sessions];
+  if(cutoff) allSess=allSess.filter(s=>new Date(s.date)>=cutoff);
+  allSess.sort((a,b)=>a.date.localeCompare(b.date));
 
-  const marks=sess.map(s=>s.mark);
+  // Stats across filtered sessions
+  const marks=allSess.map(s=>s.mark);
   const avg=marks.length?Math.round(marks.reduce((a,b)=>a+b,0)/marks.length):null;
-  const best=marks.length?Math.max(...marks):null, worst=marks.length?Math.min(...marks):null;
+  const best=marks.length?Math.max(...marks):null;
+  const worst=marks.length?Math.min(...marks):null;
   const trend=marks.length>=2?marks[marks.length-1]-marks[0]:null;
   document.getElementById('g-stats').innerHTML=`
     <div class="gstat"><div class="gstat-val">${avg!=null?avg+'%':'—'}</div><div class="gstat-lbl">Average</div></div>
@@ -1197,53 +1449,92 @@ function renderGraph() {
 
   const canvas=document.getElementById('main-chart'), empty=document.getElementById('chart-empty');
   if(activeChart){ activeChart.destroy(); activeChart=null; }
-  if(!sess.length){ canvas.style.display='none'; empty.style.display='flex';
-    document.getElementById('g-table').innerHTML='<div class="empty">No sessions match this filter</div>'; return; }
+
+  if(!allSess.length){
+    canvas.style.display='none'; empty.style.display='flex';
+    document.getElementById('chart-legend').innerHTML='';
+    document.getElementById('g-table').innerHTML='<div class="empty">No sessions in this time period</div>';
+    return;
+  }
   canvas.style.display='block'; empty.style.display='none';
+
+  const FALLBACK_COLORS=['#5b9cf6','#4ade80','#f87171','#a78bfa','#fb923c','#f5b731','#34d399','#38bdf8','#e879f9','#fbbf24'];
+
+  let chartData;
+  if(graphMode==='subjects') {
+    // One line per subject using subject colour
+    const activeSubjects=data.subjects.filter(subj=>allSess.some(s=>s.subjectId===subj.id));
+    chartData=buildMultiLineSeries(
+      allSess,
+      s=>s.subjectId,
+      (sid)=>{ const subj=data.subjects.find(s=>s.id===sid); return {label:subj?.name||sid, color:subj?.color||'#888'}; },
+      activeSubjects.map(s=>s.id)
+    );
+  } else {
+    // Topics mode: filter by selected subject
+    const sid=document.getElementById('g-subj').value;
+    let sess=allSess;
+    if(sid) sess=sess.filter(s=>s.subjectId===sid);
+    const subj=data.subjects.find(s=>s.id===sid);
+    // Get topics that have sessions in this period
+    const activeTopicIds=[...new Set(sess.map(s=>s.topicId))];
+    const activeTopics=activeTopicIds.map(tid=>{
+      for(const sub of data.subjects){ const t=sub.topics.find(x=>x.id===tid); if(t) return {id:tid,name:t.name,subjColor:sub.color}; }
+      return null;
+    }).filter(Boolean);
+    chartData=buildMultiLineSeries(
+      sess,
+      s=>s.topicId,
+      (tid,i)=>{
+        const t=activeTopics.find(x=>x.id===tid);
+        // Cycle through fallback colours unless a single subject is selected (use its colour with slight variation)
+        const color=FALLBACK_COLORS[i%FALLBACK_COLORS.length];
+        return {label:t?.name||tid, color};
+      },
+      activeTopicIds
+    );
+  }
+
+  if(!chartData.datasets.length){
+    canvas.style.display='none'; empty.style.display='flex';
+    document.getElementById('chart-legend').innerHTML='';
+    document.getElementById('g-table').innerHTML='<div class="empty">No sessions in this time period</div>';
+    return;
+  }
 
   const ctx=canvas.getContext('2d');
   const gridCfg={color:'rgba(31,34,53,.9)'};
   const tickCfg=(fam,sz)=>({color:'#6b7290',font:{family:fam,size:sz}});
-  const baseOpts={
-    responsive:true,maintainAspectRatio:false,
-    scales:{
-      x:{grid:gridCfg,ticks:tickCfg('Plus Jakarta Sans',11)},
-      y:{min:0,max:100,grid:gridCfg,ticks:{...tickCfg('JetBrains Mono',11),callback:v=>v+'%'}}
-    },
-    plugins:{
-      legend:{display:false},
-      tooltip:{backgroundColor:'#0f1117',borderColor:'#1f2235',borderWidth:1,titleColor:'#eef0f8',bodyColor:'#9699b0',
-        callbacks:{label:c=>` ${c.parsed.y}%`}}
+  activeChart=new Chart(ctx,{
+    type:'line',
+    data:{labels:chartData.labels, datasets:chartData.datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        x:{grid:gridCfg, ticks:{...tickCfg('Plus Jakarta Sans',11), maxTicksLimit:10, maxRotation:30}},
+        y:{min:0, max:100, grid:gridCfg, ticks:{...tickCfg('JetBrains Mono',11), callback:v=>v+'%'}}
+      },
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#0f1117', borderColor:'#1f2235', borderWidth:1,
+          titleColor:'#eef0f8', bodyColor:'#9699b0',
+          callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y}%`}
+        }
+      }
     }
-  };
+  });
 
-  if(tid) {
-    const dm={};
-    sess.forEach(s=>{ if(!dm[s.date]) dm[s.date]=[]; dm[s.date].push(s.mark); });
-    const agg=Object.entries(dm).sort((a,b)=>a[0]<b[0]?-1:1)
-      .map(([d,ms])=>({lbl:fmtDate(d),val:Math.round(ms.reduce((a,b)=>a+b,0)/ms.length)}));
-    const color=(sid?data.subjects.find(s=>s.id===sid)?.color:'#f5b731')||'#f5b731';
-    activeChart=new Chart(ctx,{type:'line',data:{
-      labels:agg.map(a=>a.lbl),
-      datasets:[{data:agg.map(a=>a.val),borderColor:color,backgroundColor:color+'18',fill:true,tension:.35,
-        pointBackgroundColor:agg.map(a=>scCol(a.val)),pointRadius:5,pointHoverRadius:7}]
-    },options:baseOpts});
-  } else {
-    const tm={};
-    sess.forEach(s=>{ if(!tm[s.topicId]) tm[s.topicId]=[]; tm[s.topicId].push(s.mark); });
-    const labels=[],vals=[],bColors=[];
-    for(const [id,ms] of Object.entries(tm)){
-      const f=getTopic(data,id); if(!f) continue;
-      labels.push(f.topic.name.length>28?f.topic.name.slice(0,25)+'…':f.topic.name);
-      vals.push(Math.round(ms.reduce((a,b)=>a+b,0)/ms.length));
-      bColors.push(f.subj.color+'cc');
-    }
-    activeChart=new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:bColors,borderRadius:4,borderSkipped:false}]},options:baseOpts});
-  }
+  // Build legend
+  document.getElementById('chart-legend').innerHTML=chartData.datasets.map(ds=>
+    `<div class="chart-legend-item"><div class="chart-legend-line" style="background:${ds.borderColor}"></div>${ds.label}</div>`
+  ).join('');
 
+  // Session history table (all filtered sessions)
   document.getElementById('g-table').innerHTML=`<table>
     <thead><tr><th>Date</th><th>Topic</th><th>Subject</th><th>Mark</th><th>Notes</th></tr></thead>
-    <tbody>${[...sess].reverse().map(s=>{const f=getTopic(data,s.topicId);return `<tr>
+    <tbody>${[...allSess].reverse().map(s=>{const f=getTopic(data,s.topicId);return `<tr>
       <td style="color:var(--muted)">${fmtDate(s.date)}</td>
       <td>${f?f.topic.name:'—'}</td>
       <td><span class="dot" style="background:${f?f.subj.color:'#555'}"></span> ${f?f.subj.name:'—'}</td>
@@ -1255,7 +1546,16 @@ function renderGraph() {
 
 // ── SUGGESTIONS ────────────────────────────────────────
 function renderSuggestions() {
-  const sugs=getSuggestions();
+  const data=Store.get();
+  // Populate subject filter
+  const filterSel=document.getElementById('sug-filter-subj');
+  const currentFilter=filterSel.value;
+  filterSel.innerHTML='<option value="">All subjects</option>'+
+    data.subjects.map(s=>`<option value="${s.id}"${s.id===currentFilter?' selected':''}>${s.name}</option>`).join('');
+
+  let sugs=getSuggestions();
+  if(currentFilter) sugs=sugs.filter(s=>s.subj.id===currentFilter);
+
   const groups={
     overdue:{label:'Overdue',cls:'u-overdue',badge:'Overdue',icon:'⚠',items:[]},
     never:{label:'Never Studied',cls:'u-never',badge:'Start Now',icon:'✦',items:[]},
@@ -1273,7 +1573,7 @@ function renderSuggestions() {
       <div style="font-size:20px;margin-top:1px">◈</div>
       <div>
         <div style="font-weight:600;margin-bottom:5px">How Spaced Repetition Works</div>
-        <div style="font-size:12.5px;color:var(--dim);line-height:1.7">Topics are ranked by urgency based on your last mark and when you last studied them. Lower marks mean shorter review intervals so you revisit weak spots more often.</div>
+        <div style="font-size:12.5px;color:var(--dim);line-height:1.7">Topics are ranked by urgency based on your last mark and when you last studied them. Lower marks mean shorter review intervals so you revisit weak spots more often. <strong style="color:var(--text)">Click any topic to log a session for it.</strong></div>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
           ${INTERVALS.map(([r,d,c])=>`<div style="font-size:11px;background:var(--surf2);padding:3px 9px;border-radius:6px">
             <span style="color:${c};font-family:'JetBrains Mono',monospace;font-weight:600">${r}</span> → <strong>${d}</strong>
@@ -1283,11 +1583,13 @@ function renderSuggestions() {
     </div>
   </div>`;
 
+  let anyGroups=false;
   for(const [key,grp] of Object.entries(groups)){
     if(!grp.items.length) continue;
+    anyGroups=true;
     html+=`<div class="sug-group">
       <div class="sug-group-title" style="color:${COL[key]}">${grp.icon} ${grp.label} <span style="color:var(--muted);font-weight:400">(${grp.items.length})</span></div>
-      ${grp.items.map(s=>`<div class="sug-card">
+      ${grp.items.map(s=>`<div class="sug-card" onclick="navigateToLog('${s.subj.id}','${s.topic.id}')">
         <span class="sug-sdot" style="background:${s.subj.color}"></span>
         <div class="sug-info">
           <div class="sug-topic">${s.topic.name}</div>
@@ -1297,6 +1599,7 @@ function renderSuggestions() {
       </div>`).join('')}
     </div>`;
   }
+  if(!anyGroups) html+='<div class="empty">No topics match this filter</div>';
   document.getElementById('sug-content').innerHTML=html;
 }
 
