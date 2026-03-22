@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revision Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090d;--surf:#0f1117;--surf2:#161820;--border:#1f2235;--bh:#2d3050;
+  --text:#eef0f8;--muted:#6b7290;--dim:#9699b0;
+  --gold:#f5b731;--goldd:rgba(245,183,49,.1);
+  --blue:#5b9cf6;--blued:rgba(91,156,246,.12);
+  --green:#4ade80;--greend:rgba(74,222,128,.1);
+  --red:#f87171;--redd:rgba(248,113,113,.1);
+  --purple:#a78bfa;--purped:rgba(167,139,250,.1);
+  --orange:#fb923c;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;overflow:hidden}
+
+/* ── AUTH SCREEN ── */
+#auth-screen{
+  position:fixed;inset:0;background:var(--bg);z-index:999;
+  display:flex;align-items:center;justify-content:center;
+}
+#auth-screen::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 50% at 50% 40%,rgba(245,183,49,.06) 0%,transparent 70%);
+  pointer-events:none;
+}
+.auth-box{
+  background:var(--surf);border:1px solid var(--border);border-radius:16px;
+  padding:32px;width:360px;max-width:90vw;position:relative;
+}
+.auth-logo{text-align:center;margin-bottom:26px}
+.auth-logo h1{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700}
+.auth-logo h1 span{color:var(--gold)}
+.auth-logo p{font-size:10px;color:var(--muted);letter-spacing:1.6px;margin-top:4px;text-transform:uppercase}
+.auth-tabs{display:flex;background:var(--surf2);border-radius:8px;padding:3px;gap:3px;margin-bottom:20px}
+.auth-tab{
+  flex:1;padding:7px;border:none;border-radius:6px;background:none;
+  color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;
+  font-weight:500;cursor:pointer;transition:all .15s;
+}
+.auth-tab.active{background:var(--surf);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.auth-error{
+  background:var(--redd);border:1px solid rgba(248,113,113,.25);border-radius:7px;
+  padding:9px 12px;font-size:12.5px;color:var(--red);margin-bottom:14px;
+}
+.auth-note{font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6}
+.auth-divider{text-align:center;color:var(--muted);font-size:11px;margin:14px 0;position:relative}
+.auth-divider::before,.auth-divider::after{
+  content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--border);
+}
+.auth-divider::before{left:0}.auth-divider::after{right:0}
+
+/* ── LOADING SCREEN ── */
+#loading-screen{
+  position:fixed;inset:0;background:var(--bg);z-index:998;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+}
+.spinner{
+  width:28px;height:28px;border:2px solid var(--border);
+  border-top-color:var(--gold);border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:13px;color:var(--muted)}
+
+/* ── SHELL ── */
+#shell{display:flex;height:100vh}
+
+/* ── SIDEBAR ── */
+#sidebar{
+  width:218px;min-width:218px;background:var(--surf);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  user-select:none;
+}
+.logo{padding:22px 18px 18px;border-bottom:1px solid var(--border)}
+.logo h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;letter-spacing:-.4px;line-height:1}
+.logo h1 span{color:var(--gold)}
+.logo p{font-size:10.5px;color:var(--muted);margin-top:4px;letter-spacing:.6px}
+.nav-section{padding:14px 10px 4px}
+.nav-label{font-size:9.5px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);padding:0 8px;margin-bottom:4px}
+.nav-link{
+  display:flex;align-items:center;gap:9px;padding:8px 8px 8px 10px;
+  border-radius:7px;color:var(--dim);font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .15s;margin-bottom:1px;
+  border-left:2px solid transparent;
+}
+.nav-link:hover{background:var(--surf2);color:var(--text)}
+.nav-link.active{background:var(--goldd);color:var(--gold);border-left-color:var(--gold)}
+.nav-link svg{width:15px;height:15px;flex-shrink:0;opacity:.8}
+.nav-link.active svg{opacity:1}
+.sidebar-foot{
+  margin-top:auto;padding:12px 14px;border-top:1px solid var(--border);
+}
+.sync-row{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background .4s;flex-shrink:0}
+.sync-dot.syncing{background:var(--gold);animation:pulse .9s ease-in-out infinite}
+.sync-dot.synced{background:var(--green)}
+.sync-dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sync-lbl{font-size:11px;color:var(--muted)}
+.user-row{display:flex;align-items:center;gap:7px}
+.user-email{font-size:11px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.logout-btn{
+  font-size:10.5px;color:var(--muted);background:none;border:1px solid var(--border);
+  border-radius:5px;padding:3px 8px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;
+  transition:all .15s;flex-shrink:0;
+}
+.logout-btn:hover{color:var(--text);border-color:var(--bh)}
+
+/* ── MAIN ── */
+#main{flex:1;overflow-y:auto;background:var(--bg)}
+.page{display:none;padding:30px 36px;max-width:1080px;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── PAGE HEADER ── */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:26px}
+.ph h2{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;letter-spacing:-.4px}
+.ph p{color:var(--dim);margin-top:3px;font-size:13px}
+
+/* ── CARD ── */
+.card{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:20px}
+.ctitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted);margin-bottom:14px}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:18px}
+.stat-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--muted)}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:500;color:var(--text);margin-top:7px;line-height:1}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* ── LAYOUT ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}.mb24{margin-bottom:24px}
+
+/* ── SUBJECT CARDS ── */
+.subj-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.subj-card{background:var(--surf);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.subj-hdr{display:flex;align-items:center;gap:11px;padding:15px 17px;cursor:pointer;transition:background .15s}
+.subj-hdr:hover{background:var(--surf2)}
+.sdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.sname{font-weight:600;font-size:14px;flex:1}
+.scnt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);background:var(--surf2);padding:2px 8px;border-radius:20px}
+.schev{color:var(--muted);font-size:9px;transition:transform .2s}
+.subj-card.open .schev{transform:rotate(180deg)}
+.topics-list{display:none;border-top:1px solid var(--border)}
+.subj-card.open .topics-list{display:block}
+.topic-row{
+  display:flex;align-items:center;gap:10px;padding:7px 17px;
+  border-bottom:1px solid rgba(31,34,53,.5);transition:background .1s;
+}
+.topic-row:last-of-type{border-bottom:none}
+.topic-row:hover{background:var(--surf2)}
+.tcat{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;width:90px;flex-shrink:0}
+.tname{flex:1;font-size:12.5px}
+.tdate{font-size:11px;color:var(--muted)}
+.tadd-btn{
+  display:flex;align-items:center;gap:6px;margin:8px 17px 10px;
+  padding:6px 10px;border:1px dashed var(--border);border-radius:7px;
+  cursor:pointer;font-size:12px;color:var(--muted);background:none;width:calc(100% - 34px);
+  transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif;
+}
+.tadd-btn:hover{border-color:var(--bh);color:var(--text);background:var(--surf2)}
+
+/* ── FORM ── */
+.fg{margin-bottom:16px}
+.flbl{display:block;font-size:10.5px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.9px;margin-bottom:6px}
+.fsel,.finp,.ftxt{
+  width:100%;background:var(--surf2);border:1px solid var(--border);border-radius:8px;
+  padding:9px 12px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:13px;transition:border-color .15s;outline:none;
+}
+.fsel:focus,.finp:focus,.ftxt:focus{border-color:var(--gold)}
+.fsel option{background:var(--surf2)}
+.ftxt{resize:vertical;min-height:76px}
+.slider-wrap{display:flex;align-items:center;gap:14px}
+.fslider{flex:1;appearance:none;-webkit-appearance:none;height:5px;border-radius:3px;outline:none;cursor:pointer}
+.fslider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--gold);cursor:pointer;box-shadow:0 0 0 3px rgba(245,183,49,.25)}
+.fslider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--gold);cursor:pointer;border:none}
+.mark-disp{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:500;color:var(--gold);width:52px;text-align:right}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;transition:all .15s}
+.btn-p{background:var(--gold);color:#08090d}
+.btn-p:hover{background:#f0b020;transform:translateY(-1px)}
+.btn-s{background:var(--surf2);color:var(--text);border:1px solid var(--border)}
+.btn-s:hover{border-color:var(--bh)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* ── TABLE ── */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);padding:7px 11px;border-bottom:1px solid var(--border)}
+td{padding:10px 11px;font-size:12.5px;border-bottom:1px solid rgba(31,34,53,.5);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surf2)}
+
+/* ── SCORE BADGE ── */
+.sb{font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:500;padding:2px 7px;border-radius:5px;display:inline-block}
+.s-low{background:var(--redd);color:var(--red)}
+.s-mid{background:rgba(251,146,60,.1);color:var(--orange)}
+.s-good{background:var(--goldd);color:var(--gold)}
+.s-high{background:var(--greend);color:var(--green)}
+
+/* ── GRAPH ── */
+.graph-sels{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.graph-sels>div{min-width:180px}
+.gstat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.gstat{background:var(--surf2);border-radius:8px;padding:12px;text-align:center}
+.gstat-val{font-family:'JetBrains Mono',monospace;font-size:19px;color:var(--text)}
+.gstat-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.6px}
+.chart-wrap{position:relative;height:280px}
+.chart-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+
+/* ── SUGGESTIONS ── */
+.sug-group{margin-bottom:22px}
+.sug-group-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.sug-card{display:flex;align-items:center;gap:13px;background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:12px 15px;margin-bottom:7px;transition:border-color .15s}
+.sug-card:hover{border-color:var(--bh)}
+.sug-sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sug-info{flex:1}
+.sug-topic{font-weight:600;font-size:13px}
+.sug-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.urgency{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.u-overdue{background:var(--redd);color:var(--red)}
+.u-never{background:var(--purped);color:var(--purple)}
+.u-due{background:var(--goldd);color:var(--gold)}
+.u-soon{background:var(--blued);color:var(--blue)}
+.u-ok{background:var(--greend);color:var(--green)}
+
+/* ── DASHBOARD ── */
+.dash-row{display:grid;grid-template-columns:1.5fr 1fr;gap:14px}
+.due-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.due-row:last-child{border-bottom:none}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.overlay.open{display:flex}
+.modal{background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:24px;width:380px;max-width:90vw}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:700;margin-bottom:18px}
+.modal-actions{display:flex;gap:9px;margin-top:18px;justify-content:flex-end}
+
+/* ── UTILS ── */
+.empty{text-align:center;padding:36px;color:var(--muted);font-size:13px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--bh)}
+
+/* ── CALENDAR ── */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.cal-nav h3{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;letter-spacing:-.3px}
+.cal-nav-btns{display:flex;gap:6px}
+.cal-nav-btn{
+  background:var(--surf2);border:1px solid var(--border);color:var(--dim);
+  border-radius:7px;width:32px;height:32px;cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.cal-nav-btn:hover{border-color:var(--bh);color:var(--text)}
+.cal-today-btn{
+  background:var(--surf2);border:1px solid var(--border);color:var(--dim);
+  border-radius:7px;padding:0 11px;height:32px;cursor:pointer;font-size:12px;
+  font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;transition:all .15s;
+}
+.cal-today-btn:hover{border-color:var(--bh);color:var(--text)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border-radius:10px;overflow:hidden}
+.cal-dow{background:var(--surf2);padding:8px 4px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.cal-day{
+  background:var(--surf);min-height:88px;padding:7px 8px;cursor:pointer;
+  transition:background .12s;position:relative;
+}
+.cal-day:hover{background:var(--surf2)}
+.cal-day.other-month .cal-day-num{color:var(--muted);opacity:.35}
+.cal-day.today{background:rgba(245,183,49,.05)}
+.cal-day.today .cal-day-num{
+  background:var(--gold);color:#08090d;width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:4px;
+}
+.cal-day-num{font-size:12px;font-weight:600;color:var(--dim);margin-bottom:5px;line-height:1}
+.cal-events{display:flex;flex-direction:column;gap:3px}
+.cal-evt{
+  font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;
+  transition:opacity .1s;
+}
+.cal-evt:hover{opacity:.8}
+.cal-evt.type-study{background:var(--blued);color:var(--blue)}
+.cal-evt.type-exam{background:var(--redd);color:var(--red)}
+.cal-evt.type-test{background:var(--purped);color:var(--purple)}
+.cal-more{font-size:10px;color:var(--muted);padding:1px 4px;cursor:pointer}
+.cal-legend{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.cal-legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim)}
+.cal-legend-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+
+/* ── UPCOMING EXAMS ── */
+.upcoming-item{
+  display:flex;align-items:center;gap:13px;padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.upcoming-item:last-child{border-bottom:none}
+.upcoming-countdown{
+  font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;
+  min-width:54px;text-align:right;flex-shrink:0;
+}
+.upcoming-info{flex:1;min-width:0}
+.upcoming-title{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upcoming-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.upcoming-type{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:.4px;flex-shrink:0}
+.type-badge-exam{background:var(--redd);color:var(--red)}
+.type-badge-test{background:var(--purped);color:var(--purple)}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:22px;right:22px;background:var(--surf);border:1px solid var(--border);border-radius:9px;padding:10px 16px;font-size:12.5px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:200;display:flex;align-items:center;gap:8px}
+
+/* ── MOBILE TOP BAR ── */
+#topbar{
+  display:none;position:fixed;top:0;left:0;right:0;height:52px;z-index:90;
+  background:var(--surf);border-bottom:1px solid var(--border);
+  align-items:center;padding:0 14px;gap:12px;
+}
+.topbar-logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;flex:1;text-align:center}
+.topbar-logo span{color:var(--gold)}
+.topbar-sync{width:28px;display:flex;justify-content:flex-end;align-items:center}
+#hamburger{
+  background:none;border:none;cursor:pointer;padding:4px;
+  display:flex;flex-direction:column;gap:4px;width:28px;
+}
+#hamburger span{display:block;height:2px;background:var(--dim);border-radius:2px;transition:all .2s}
+#hamburger span:first-child{width:20px}
+#hamburger span:nth-child(2){width:16px}
+#hamburger span:last-child{width:20px}
+#sidebar-backdrop{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:95;backdrop-filter:blur(2px);
+}
+#sidebar-backdrop.open{display:block}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  html,body{overflow:auto;height:auto}
+  #shell{display:block !important;height:auto;padding-top:52px}
+  #topbar{display:flex}
+
+  /* Sidebar becomes a drawer */
+  #sidebar{
+    position:fixed;top:0;left:0;bottom:0;z-index:96;
+    transform:translateX(-100%);transition:transform .25s ease;
+    width:240px;min-width:0;
+  }
+  #sidebar.open{transform:translateX(0)}
+  /* hide the desktop sidebar sync dot — use topbar one instead */
+  .sidebar-foot .sync-row{display:none}
+
+  #main{width:100%;min-height:calc(100vh - 52px)}
+  .page{padding:18px 16px}
+  .ph{margin-bottom:18px}
+  .ph h2{font-size:24px}
+
+  /* Stack all 2/4-column grids */
+  .stats-grid{grid-template-columns:1fr 1fr;gap:9px}
+  .g2{grid-template-columns:1fr}
+  .subj-grid{grid-template-columns:1fr}
+  .dash-row{grid-template-columns:1fr}
+  .gstat-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .graph-sels{flex-direction:column;gap:10px}
+  .graph-sels>div{min-width:0;width:100%}
+
+  /* Stat cards slightly smaller */
+  .stat{padding:14px}
+  .stat-val{font-size:22px}
+
+  /* Topic row — hide category label on very small screens */
+  .tcat{display:none}
+
+  /* Suggestion cards — wrap urgency badge */
+  .sug-card{flex-wrap:wrap;gap:9px}
+  .sug-info{min-width:0}
+
+  /* Calendar — smaller day cells on mobile */
+  .cal-day{min-height:60px;padding:5px 4px}
+  .cal-dow{padding:6px 2px;font-size:9px}
+  .cal-evt{font-size:9.5px;padding:1px 4px}
+  .cal-day-num{font-size:11px}
+
+  /* Table — hide notes column on mobile */
+  table th:last-child, table td:last-child{display:none}
+
+  /* Toast at bottom centre on mobile */
+  #toast{left:16px;right:16px;bottom:16px;justify-content:center}
+
+  /* Modal full-width on mobile */
+  .modal{width:100%;border-radius:12px 12px 0 0;position:fixed;bottom:0;left:0;right:0;max-width:100vw}
+  .overlay.open{align-items:flex-end}
+
+  /* Auth screen full bleed */
+  .auth-box{border-radius:12px;padding:24px 20px}
+}
+
+@media(max-width:380px){
+  .stats-grid{grid-template-columns:1fr}
+  .gstat-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH SCREEN ── -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <h1>revision<span>.</span></h1>
+      <p>AQA A-Level Tracker</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Create Account</button>
+    </div>
+    <div class="auth-error" id="auth-error" style="display:none"></div>
+    <div class="fg">
+      <label class="flbl">Email</label>
+      <input type="email" class="finp" id="auth-email" placeholder="your@email.com">
+    </div>
+    <div class="fg">
+      <label class="flbl">Password</label>
+      <input type="password" class="finp" id="auth-pass" placeholder="••••••••">
+    </div>
+    <button class="btn btn-p" id="auth-btn" style="width:100%;justify-content:center" onclick="handleAuth()">Sign In</button>
+    <p class="auth-note">Your data is encrypted and syncs automatically across all your devices.</p>
+  </div>
+</div>
+
+<!-- ── LOADING ── -->
+<div id="loading-screen" style="display:none">
+  <div class="spinner"></div>
+  <div class="loading-txt" id="loading-msg">Loading your data…</div>
+</div>
+
+<!-- ── MOBILE TOP BAR ── -->
+<div id="topbar">
+  <button id="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="topbar-logo">revision<span>.</span></div>
+  <div class="topbar-sync">
+    <div class="sync-dot" id="sync-dot-top"></div>
+  </div>
+</div>
+<div id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+<!-- ── APP ── -->
+<div id="shell" style="display:none">
+<nav id="sidebar">
+  <div class="logo">
+    <h1>revision<span>.</span></h1>
+    <p>AQA A-LEVEL TRACKER</p>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <div class="nav-link active" data-page="dashboard">
+      <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.2"/><rect x="9" y="1" width="6" height="6" rx="1.2"/><rect x="1" y="9" width="6" height="6" rx="1.2"/><rect x="9" y="9" width="6" height="6" rx="1.2"/></svg>
+      Dashboard
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Study</div>
+    <div class="nav-link" data-page="subjects">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v11.5L8 12.5l-2 1V2H3v11H2V2z"/><rect x="10" y="1" width="4" height="13" rx="1"/></svg>
+      Subjects
+    </div>
+    <div class="nav-link" data-page="calendar">
+      <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M1 6h14" stroke="currentColor" stroke-width="1.3"/><rect x="4" y="1" width="1.5" height="4" rx=".75"/><rect x="10.5" y="1" width="1.5" height="4" rx=".75"/><rect x="3.5" y="8.5" width="2" height="2" rx=".4"/><rect x="7" y="8.5" width="2" height="2" rx=".4"/><rect x="10.5" y="8.5" width="2" height="2" rx=".4"/></svg>
+      Calendar
+    </div>
+    <div class="nav-link" data-page="log">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.5 1.5a1.5 1.5 0 0 1 2.12 2.12L5.5 11.75 2 14l2.25-3.5L11.5 1.5z"/></svg>
+      Log Session
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Insights</div>
+    <div class="nav-link" data-page="graphs">
+      <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1.5" y="9" width="3" height="6" rx=".8"/><rect x="6.5" y="5" width="3" height="10" rx=".8"/><rect x="11.5" y="1" width="3" height="14" rx=".8"/></svg>
+      Progress
+    </div>
+    <div class="nav-link" data-page="suggestions">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a5 5 0 0 1 3.2 8.8c-.5.5-.7 1-.7 1.7v.5H5.5v-.5c0-.7-.2-1.2-.7-1.7A5 5 0 0 1 8 1z"/><rect x="5.5" y="13" width="5" height="1.2" rx=".6"/><rect x="6.3" y="14.8" width="3.4" height=".8" rx=".4"/></svg>
+      Suggestions
+    </div>
+  </div>
+  <div class="sidebar-foot">
+    <div class="sync-row">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span class="sync-lbl" id="sync-lbl">Ready</span>
+    </div>
+    <div class="user-row">
+      <span class="user-email" id="user-email"></span>
+      <button class="logout-btn" onclick="handleLogout()">Sign out</button>
+    </div>
+  </div>
+</nav>
+
+<main id="main">
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="ph">
+      <div><h2 id="dash-greeting">Good morning</h2><p>Here's your revision overview</p></div>
+    </div>
+    <div class="stats-grid" id="dash-stats"></div>
+    <div class="dash-row">
+      <div class="card" id="dash-recent"></div>
+      <div class="card" id="dash-due"></div>
+    </div>
+  </div>
+
+  <!-- SUBJECTS -->
+  <div class="page" id="page-subjects">
+    <div class="ph">
+      <div><h2>Subjects & Topics</h2><p>Manage your subjects and revision topics</p></div>
+      <button class="btn btn-p" onclick="openSubjectModal()">+ Add Subject</button>
+    </div>
+    <div class="subj-grid" id="subj-grid"></div>
+  </div>
+
+  <!-- LOG SESSION -->
+  <div class="page" id="page-log">
+    <div class="ph"><div><h2>Log a Session</h2><p>Record what you studied and how you did</p></div></div>
+    <div class="g2">
+      <div class="card">
+        <div class="fg">
+          <label class="flbl">Subject</label>
+          <select class="fsel" id="log-subj" onchange="updateLogTopics()">
+            <option value="">Select subject…</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flbl">Topic</label>
+          <select class="fsel" id="log-topic"><option value="">Select topic…</option></select>
+        </div>
+        <div class="fg">
+          <label class="flbl">Date</label>
+          <input type="date" class="finp" id="log-date">
+        </div>
+        <div class="fg">
+          <label class="flbl">Mark</label>
+          <div class="slider-wrap">
+            <input type="range" class="fslider" id="log-slider" min="0" max="100" value="70" oninput="updateMarkDisp(this.value)">
+            <span class="mark-disp" id="log-mark-disp">70%</span>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="flbl">Notes <span style="color:var(--muted);font-size:9px;text-transform:none;letter-spacing:0">(optional)</span></label>
+          <textarea class="ftxt" id="log-notes" placeholder="What went well? What do you need to revisit?"></textarea>
+        </div>
+        <button class="btn btn-p" onclick="logSession()" style="width:100%;justify-content:center">Log Session</button>
+      </div>
+      <div class="card">
+        <div class="ctitle">Recent Sessions</div>
+        <div id="log-recent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRAPHS -->
+  <div class="page" id="page-graphs">
+    <div class="ph"><div><h2>Progress</h2><p>Track your performance over time</p></div></div>
+    <div class="card mb20">
+      <div class="graph-sels">
+        <div>
+          <div class="flbl">Subject</div>
+          <select class="fsel" id="g-subj" onchange="updateGraphTopics()"><option value="">All subjects</option></select>
+        </div>
+        <div>
+          <div class="flbl">Topic</div>
+          <select class="fsel" id="g-topic" onchange="renderGraph()"><option value="">All topics</option></select>
+        </div>
+      </div>
+      <div class="gstat-grid" id="g-stats"></div>
+      <div class="chart-wrap">
+        <canvas id="main-chart"></canvas>
+        <div class="chart-empty" id="chart-empty" style="display:none">No sessions match this filter yet</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Session History</div>
+      <div class="tw" id="g-table"></div>
+    </div>
+  </div>
+
+  <!-- SUGGESTIONS -->
+  <div class="page" id="page-suggestions">
+    <div class="ph"><div><h2>Study Suggestions</h2><p>Spaced repetition — topics ranked by urgency</p></div></div>
+    <div id="sug-content"></div>
+  </div>  <!-- CALENDAR -->
+  <div class="page" id="page-calendar">
+    <div class="ph">
+      <div><h2>Calendar</h2><p>Plan study sessions and track upcoming exams</p></div>
+      <button class="btn btn-p" onclick="openEventModal()">+ Add Event</button>
+    </div>
+
+    <!-- Calendar card -->
+    <div class="card mb20">
+      <div class="cal-nav">
+        <h3 id="cal-month-label">Month Year</h3>
+        <div style="display:flex;align-items:center;gap:7px">
+          <button class="cal-today-btn" onclick="calGoToday()">Today</button>
+          <div class="cal-nav-btns">
+            <button class="cal-nav-btn" onclick="calShift(-1)">‹</button>
+            <button class="cal-nav-btn" onclick="calShift(1)">›</button>
+          </div>
+        </div>
+      </div>
+      <div class="cal-legend">
+        <div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--blue)"></span>Study Session</div>
+        <div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--red)"></span>Exam</div>
+        <div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--purple)"></span>Test</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <!-- Upcoming exams/tests -->
+    <div class="card">
+      <div class="ctitle">Upcoming Exams &amp; Tests</div>
+      <div id="upcoming-list"></div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- MODAL: Add Calendar Event -->
+<div class="overlay" id="modal-event">
+  <div class="modal">
+    <div class="modal-title" id="modal-event-title">Add Event</div>
+    <div class="fg">
+      <label class="flbl">Type</label>
+      <select class="fsel" id="ev-type" onchange="updateEventForm()">
+        <option value="study">Study Session</option>
+        <option value="exam">Exam</option>
+        <option value="test">Test</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="flbl">Title</label>
+      <input type="text" class="finp" id="ev-title" placeholder="e.g. Maths Paper 1, Integration revision…">
+    </div>
+    <div class="fg">
+      <label class="flbl">Subject <span style="color:var(--muted);font-size:9px;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <select class="fsel" id="ev-subj">
+        <option value="">No subject</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="flbl">Date</label>
+      <input type="date" class="finp" id="ev-date">
+    </div>
+    <div class="fg">
+      <label class="flbl">Notes <span style="color:var(--muted);font-size:9px;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <textarea class="ftxt" id="ev-notes" placeholder="Any extra details…" style="min-height:58px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeModal('modal-event')">Cancel</button>
+      <button class="btn btn-p" id="ev-save-btn" onclick="saveEvent()">Add Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Event Detail / Delete -->
+<div class="overlay" id="modal-event-detail">
+  <div class="modal">
+    <div class="modal-title" id="evd-title">Event</div>
+    <div id="evd-body" style="font-size:13px;color:var(--dim);line-height:1.8"></div>
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeModal('modal-event-detail')">Close</button>
+      <button class="btn" style="background:var(--redd);color:var(--red);border:1px solid rgba(248,113,113,.25)" onclick="deleteEvent()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Subject -->
+<div class="overlay" id="modal-subj">
+  <div class="modal">
+    <div class="modal-title">Add Subject</div>
+    <div class="fg"><label class="flbl">Name</label><input type="text" class="finp" id="ms-name" placeholder="e.g. Biology"></div>
+    <div class="fg"><label class="flbl">Colour</label><input type="color" class="finp" id="ms-color" value="#5b9cf6" style="height:42px;padding:4px 8px;cursor:pointer"></div>
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeModal('modal-subj')">Cancel</button>
+      <button class="btn btn-p" onclick="addSubject()">Add Subject</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Topic -->
+<div class="overlay" id="modal-topic">
+  <div class="modal">
+    <div class="modal-title">Add Topic</div>
+    <div class="fg"><label class="flbl">Topic Name</label><input type="text" class="finp" id="mt-name" placeholder="e.g. Integration by Parts"></div>
+    <div class="fg"><label class="flbl">Category</label><input type="text" class="finp" id="mt-cat" placeholder="e.g. Pure, Statistics, Year 2"></div>
+    <input type="hidden" id="mt-subj">
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeModal('modal-topic')">Cancel</button>
+      <button class="btn btn-p" onclick="addTopic()">Add Topic</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"><span id="toast-msg"></span></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// !! CONFIGURATION — fill these in before uploading !!
+// ═══════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://xhhcbvabfdhpiujgaqvz.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoaGNidmFiZmRocGl1amdhcXZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNzQ2ODksImV4cCI6MjA4OTc1MDY4OX0.qiIvhYtj8bY7-dgcbKxF_ugkDH3ITBLa-8xCLhWgUbI';
+// ═══════════════════════════════════════════════════════
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── DEFAULT SEED DATA ──────────────────────────────────
+const DEFAULT_DATA = {
+  subjects:[
+    {
+      id:'maths',name:'Mathematics',color:'#f5b731',
+      topics:[
+        {id:'m1',name:'Proof',category:'Pure'},
+        {id:'m2',name:'Algebra & Functions',category:'Pure'},
+        {id:'m3',name:'Coordinate Geometry',category:'Pure'},
+        {id:'m4',name:'Sequences & Series',category:'Pure'},
+        {id:'m5',name:'Trigonometry',category:'Pure'},
+        {id:'m6',name:'Exponentials & Logarithms',category:'Pure'},
+        {id:'m7',name:'Differentiation',category:'Pure'},
+        {id:'m8',name:'Integration',category:'Pure'},
+        {id:'m9',name:'Numerical Methods',category:'Pure'},
+        {id:'m10',name:'Vectors',category:'Pure'},
+        {id:'m11',name:'Binomial Expansion',category:'Pure'},
+        {id:'m12',name:'Statistical Sampling',category:'Statistics'},
+        {id:'m13',name:'Data Presentation & Interpretation',category:'Statistics'},
+        {id:'m14',name:'Probability',category:'Statistics'},
+        {id:'m15',name:'Statistical Distributions',category:'Statistics'},
+        {id:'m16',name:'Hypothesis Testing',category:'Statistics'},
+        {id:'m17',name:'Kinematics',category:'Mechanics'},
+        {id:'m18',name:"Forces & Newton's Laws",category:'Mechanics'},
+        {id:'m19',name:'Moments',category:'Mechanics'},
+        {id:'m20',name:'Projectiles',category:'Mechanics'},
+        {id:'m21',name:'Variable Acceleration',category:'Mechanics'},
+      ]
+    },
+    {
+      id:'fm',name:'Further Mathematics',color:'#f87171',
+      topics:[
+        {id:'fm1',name:'Complex Numbers',category:'Core Pure 1'},
+        {id:'fm2',name:'Argand Diagrams & Loci',category:'Core Pure 1'},
+        {id:'fm3',name:'Series & Sigma Notation',category:'Core Pure 1'},
+        {id:'fm4',name:'Roots of Polynomials',category:'Core Pure 1'},
+        {id:'fm5',name:'Volumes of Revolution',category:'Core Pure 1'},
+        {id:'fm6',name:'Matrices',category:'Core Pure 1'},
+        {id:'fm7',name:'Linear Transformations',category:'Core Pure 1'},
+        {id:'fm8',name:'Proof by Induction',category:'Core Pure 1'},
+        {id:'fm9',name:'Vectors in 3D',category:'Core Pure 1'},
+        {id:'fm10',name:'Complex Numbers (Modulus-Argument)',category:'Core Pure 2'},
+        {id:'fm11',name:'Hyperbolic Functions',category:'Core Pure 2'},
+        {id:'fm12',name:'Further Calculus',category:'Core Pure 2'},
+        {id:'fm13',name:'Further Differential Equations',category:'Core Pure 2'},
+        {id:'fm14',name:'Coordinate Systems',category:'Core Pure 2'},
+        {id:'fm15',name:'Method of Differences',category:'Core Pure 2'},
+        {id:'fm16',name:'Linear Regression',category:'Further Statistics'},
+        {id:'fm17',name:'Poisson Distribution',category:'Further Statistics'},
+        {id:'fm18',name:'Chi-Squared Tests',category:'Further Statistics'},
+        {id:'fm19',name:'Continuous Distributions',category:'Further Statistics'},
+        {id:'fm20',name:'Momentum & Impulse',category:'Further Mechanics'},
+        {id:'fm21',name:'Elastic Strings & Springs',category:'Further Mechanics'},
+        {id:'fm22',name:'Elastic Collisions',category:'Further Mechanics'},
+      ]
+    },
+    {
+      id:'phys',name:'Physics',color:'#5b9cf6',
+      topics:[
+        {id:'ph1',name:'Measurements & Their Errors',category:'Year 1'},
+        {id:'ph2',name:'Particles & Radiation',category:'Year 1'},
+        {id:'ph3',name:'Waves',category:'Year 1'},
+        {id:'ph4',name:'Optics & Superposition',category:'Year 1'},
+        {id:'ph5',name:'Mechanics & Materials',category:'Year 1'},
+        {id:'ph6',name:'Electricity',category:'Year 1'},
+        {id:'ph7',name:'Circular Motion',category:'Year 2'},
+        {id:'ph8',name:'Simple Harmonic Motion',category:'Year 2'},
+        {id:'ph9',name:'Thermal Physics',category:'Year 2'},
+        {id:'ph10',name:'Gravitational Fields',category:'Year 2'},
+        {id:'ph11',name:'Electric Fields',category:'Year 2'},
+        {id:'ph12',name:'Capacitance',category:'Year 2'},
+        {id:'ph13',name:'Magnetic Fields',category:'Year 2'},
+        {id:'ph14',name:'Electromagnetic Induction',category:'Year 2'},
+        {id:'ph15',name:'Nuclear Physics',category:'Year 2'},
+        {id:'ph16',name:'Telescopes',category:'Astrophysics'},
+        {id:'ph17',name:'Classification of Stars',category:'Astrophysics'},
+        {id:'ph18',name:'Cosmology',category:'Astrophysics'},
+      ]
+    },
+    {
+      id:'cs',name:'Computer Science',color:'#4ade80',
+      topics:[
+        {id:'cs1',name:'Programming Fundamentals',category:'Programming'},
+        {id:'cs2',name:'Object-Oriented Programming',category:'Programming'},
+        {id:'cs3',name:'Functional Programming',category:'Programming'},
+        {id:'cs4',name:'Data Structures & ADTs',category:'Data Structures'},
+        {id:'cs5',name:'Graphs & Trees',category:'Data Structures'},
+        {id:'cs6',name:'Hash Tables',category:'Data Structures'},
+        {id:'cs7',name:'Sorting Algorithms',category:'Algorithms'},
+        {id:'cs8',name:'Searching Algorithms',category:'Algorithms'},
+        {id:'cs9',name:'Graph Algorithms',category:'Algorithms'},
+        {id:'cs10',name:'Complexity & Big-O Notation',category:'Theory'},
+        {id:'cs11',name:'Turing Machines & Decidability',category:'Theory'},
+        {id:'cs12',name:'Regular Languages & Automata',category:'Theory'},
+        {id:'cs13',name:'Data Representation',category:'Systems'},
+        {id:'cs14',name:'Boolean Algebra & Logic',category:'Systems'},
+        {id:'cs15',name:'Processor Architecture',category:'Systems'},
+        {id:'cs16',name:'Operating Systems',category:'Systems'},
+        {id:'cs17',name:'Networking & Protocols',category:'Networks'},
+        {id:'cs18',name:'The Internet & Security',category:'Networks'},
+        {id:'cs19',name:'Databases & SQL',category:'Databases'},
+        {id:'cs20',name:'Database Normalisation',category:'Databases'},
+        {id:'cs21',name:'Big Data',category:'Data'},
+      ]
+    }
+  ],
+  sessions:[],
+  events: []
+};
+
+// ── APP STATE ──────────────────────────────────────────
+let appData = null;
+let currentUser = null;
+let activeChart = null;
+let syncTimer = null;
+let authMode = 'login';
+
+// ── SUPABASE: AUTH ─────────────────────────────────────
+async function init() {
+  const { data:{ session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    showLoading('Loading your data…');
+    await loadData();
+    showApp();
+  }
+  // else: auth screen is already visible
+}
+
+async function handleAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  const btn   = document.getElementById('auth-btn');
+  if (!email || !pass) { showAuthError('Please enter your email and password.'); return; }
+  btn.disabled = true;
+  btn.textContent = authMode === 'login' ? 'Signing in…' : 'Creating account…';
+  hideAuthError();
+
+  if (authMode === 'login') {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) { showAuthError(error.message); btn.disabled=false; btn.textContent='Sign In'; return; }
+    currentUser = data.user;
+    showLoading('Loading your data…');
+    await loadData();
+    showApp();
+  } else {
+    const { data, error } = await sb.auth.signUp({ email, password: pass });
+    if (error) { showAuthError(error.message); btn.disabled=false; btn.textContent='Create Account'; return; }
+    if (data.user && !data.session) {
+      showAuthError('Check your email for a confirmation link, then sign in.');
+      btn.disabled=false; btn.textContent='Create Account'; return;
+    }
+    currentUser = data.user;
+    showLoading('Setting up your tracker…');
+    appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    await saveData();
+    showApp();
+  }
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  appData = null; currentUser = null;
+  document.getElementById('shell').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-pass').value = '';
+  document.getElementById('auth-btn').disabled = false;
+  document.getElementById('auth-btn').textContent = 'Sign In';
+  switchTab('login');
+}
+
+function switchTab(mode) {
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode==='login');
+  document.getElementById('tab-signup').classList.toggle('active', mode==='signup');
+  document.getElementById('auth-btn').textContent = mode==='login' ? 'Sign In' : 'Create Account';
+  hideAuthError();
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideAuthError() { document.getElementById('auth-error').style.display='none'; }
+
+// ── SUPABASE: DATA ─────────────────────────────────────
+async function loadData() {
+  const { data, error } = await sb
+    .from('revision_data')
+    .select('data')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+  if (error) { console.error(error); appData = JSON.parse(JSON.stringify(DEFAULT_DATA)); return; }
+  if (!data) { appData = JSON.parse(JSON.stringify(DEFAULT_DATA)); await saveData(); }
+  else appData = data.data;
+}
+
+async function saveData() {
+  setSyncStatus('syncing');
+  const { error } = await sb.from('revision_data').upsert({
+    user_id: currentUser.id,
+    data: appData,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'user_id' });
+  if (error) { setSyncStatus('error'); toast('Sync failed — check connection'); }
+  else setSyncStatus('synced');
+}
+
+function scheduleSync() {
+  setSyncStatus('syncing');
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(saveData, 800);
+}
+
+// ── UI TRANSITIONS ─────────────────────────────────────
+function showLoading(msg) {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'flex';
+  document.getElementById('loading-msg').textContent = msg || 'Loading…';
+}
+function showApp() {
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('shell').style.display = 'flex';
+  document.getElementById('user-email').textContent = currentUser?.email || '';
+  setSyncStatus('synced');
+  navigate('dashboard');
+}
+function setSyncStatus(s) {
+  const dot=document.getElementById('sync-dot'), lbl=document.getElementById('sync-lbl');
+  const dotTop=document.getElementById('sync-dot-top');
+  dot.className='sync-dot '+s;
+  if(dotTop) dotTop.className='sync-dot '+s;
+  lbl.textContent = s==='syncing'?'Syncing…':s==='synced'?'Synced':s==='error'?'Sync error':'Ready';
+}
+
+// ── STORE (in-memory + async sync) ────────────────────
+const Store = {
+  get()        { return appData; },
+  addSession(s){ appData.sessions.push(s); scheduleSync(); },
+  addSubject(s){ appData.subjects.push(s); scheduleSync(); },
+  addTopic(sid,t){
+    const subj = appData.subjects.find(x=>x.id===sid);
+    if(subj){ subj.topics.push(t); scheduleSync(); }
+  },
+  addEvent(e){ if(!appData.events) appData.events=[]; appData.events.push(e); scheduleSync(); },
+  deleteEvent(id){ appData.events=(appData.events||[]).filter(e=>e.id!==id); scheduleSync(); }
+};
+
+// ── SPACED REPETITION ──────────────────────────────────
+function reviewInterval(mark) {
+  if(mark<50)  return 1;
+  if(mark<65)  return 2;
+  if(mark<75)  return 4;
+  if(mark<85)  return 7;
+  if(mark<95)  return 14;
+  return 21;
+}
+function daysSince(dateStr) {
+  return Math.floor((Date.now()-new Date(dateStr))/(864e5));
+}
+function getSuggestions() {
+  const data=Store.get(), res=[];
+  for(const subj of data.subjects) {
+    for(const topic of subj.topics) {
+      const sess=data.sessions.filter(s=>s.topicId===topic.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
+      if(!sess.length) {
+        res.push({subj,topic,urgency:'never',priority:9999,lastMark:null,daysSince:null,interval:null});
+      } else {
+        const lat=sess[0], ds=daysSince(lat.date), iv=reviewInterval(lat.mark), pr=ds/iv;
+        const urg=pr>=1.5?'overdue':pr>=0.8?'due':pr>=0.4?'soon':'ok';
+        res.push({subj,topic,urgency:urg,priority:pr,lastMark:lat.mark,daysSince:ds,interval:iv});
+      }
+    }
+  }
+  return res.sort((a,b)=>b.priority-a.priority);
+}
+
+// ── UTILS ──────────────────────────────────────────────
+function uid()        { return Math.random().toString(36).slice(2,10); }
+function scCls(m)     { return m<50?'s-low':m<70?'s-mid':m<85?'s-good':'s-high'; }
+function scCol(m)     { return m<50?'#f87171':m<70?'#fb923c':m<85?'#f5b731':'#4ade80'; }
+function fmtDate(d)   { return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function getTopic(data,tid) {
+  for(const s of data.subjects){ const t=s.topics.find(x=>x.id===tid); if(t) return {topic:t,subj:s}; }
+  return null;
+}
+function toast(msg) {
+  document.getElementById('toast-msg').textContent=msg;
+  const t=document.getElementById('toast');
+  t.style.opacity='1'; clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.style.opacity='0',2600);
+}
+
+// ── ROUTER ─────────────────────────────────────────────
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelector(`.nav-link[data-page="${page}"]`).classList.add('active');
+  ({dashboard:renderDashboard,subjects:renderSubjects,log:renderLog,graphs:renderGraphs,suggestions:renderSuggestions,calendar:renderCalendar})[page]?.();
+}
+document.querySelectorAll('.nav-link').forEach(n=>n.addEventListener('click',()=>{ navigate(n.dataset.page); closeSidebar(); }));
+document.getElementById('auth-email').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('auth-pass').focus(); });
+document.getElementById('auth-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') handleAuth(); });
+
+// ── DASHBOARD ──────────────────────────────────────────
+function renderDashboard() {
+  const data=Store.get();
+  const hr=new Date().getHours();
+  document.getElementById('dash-greeting').textContent=hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
+  const sess=data.sessions, marks=sess.map(s=>s.mark);
+  const avg=marks.length?Math.round(marks.reduce((a,b)=>a+b,0)/marks.length):null;
+  const wk=new Date(); wk.setDate(wk.getDate()-7);
+  const wkCnt=sess.filter(s=>new Date(s.date)>=wk).length;
+  const overdue=getSuggestions().filter(s=>s.urgency==='overdue'||s.urgency==='never').length;
+
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat"><div class="stat-lbl">Total Sessions</div><div class="stat-val">${sess.length}</div><div class="stat-sub">${wkCnt} this week</div></div>
+    <div class="stat"><div class="stat-lbl">Subjects</div><div class="stat-val">${data.subjects.length}</div><div class="stat-sub">${data.subjects.reduce((a,s)=>a+s.topics.length,0)} topics total</div></div>
+    <div class="stat"><div class="stat-lbl">Average Mark</div><div class="stat-val" style="color:var(--gold)">${avg!=null?avg+'%':'—'}</div><div class="stat-sub">across all sessions</div></div>
+    <div class="stat"><div class="stat-lbl">Needs Review</div><div class="stat-val" style="color:var(--red)">${overdue}</div><div class="stat-sub">topics overdue</div></div>
+  `;
+
+  const recent=[...sess].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,7);
+  document.getElementById('dash-recent').innerHTML='<div class="ctitle">Recent Sessions</div>'+(recent.length?`
+    <div class="tw"><table>
+      <thead><tr><th>Topic</th><th>Subject</th><th>Mark</th><th>Date</th></tr></thead>
+      <tbody>${recent.map(s=>{const f=getTopic(data,s.topicId);return `<tr>
+        <td>${f?f.topic.name:'—'}</td>
+        <td><span class="dot" style="background:${f?f.subj.color:'#555'}"></span> ${f?f.subj.name:'—'}</td>
+        <td><span class="sb ${scCls(s.mark)}">${s.mark}%</span></td>
+        <td style="color:var(--muted)">${fmtDate(s.date)}</td>
+      </tr>`;}).join('')}</tbody>
+    </table></div>`
+  :'<div class="empty">No sessions logged yet.<br>Head to <b>Log Session</b> to get started.</div>');
+
+  const due=getSuggestions().filter(s=>['overdue','never','due'].includes(s.urgency)).slice(0,7);
+  document.getElementById('dash-due').innerHTML='<div class="ctitle">Due for Review</div>'+(due.length?
+    due.map(s=>`<div class="due-row">
+      <span class="dot" style="background:${s.subj.color}"></span>
+      <div style="flex:1"><div style="font-size:12.5px;font-weight:600">${s.topic.name}</div><div style="font-size:11px;color:var(--muted)">${s.subj.name}</div></div>
+      <span class="urgency u-${s.urgency}">${s.urgency==='never'?'New':s.urgency}</span>
+    </div>`).join('')
+  :'<div class="empty">All caught up! 🎉</div>');
+}
+
+// ── SUBJECTS ───────────────────────────────────────────
+function renderSubjects() {
+  const data=Store.get();
+  const latestByTopic={};
+  data.sessions.forEach(s=>{ if(!latestByTopic[s.topicId]||new Date(s.date)>new Date(latestByTopic[s.topicId].date)) latestByTopic[s.topicId]=s; });
+  document.getElementById('subj-grid').innerHTML=data.subjects.map(subj=>`
+    <div class="subj-card" id="sc-${subj.id}">
+      <div class="subj-hdr" onclick="toggleSubj('${subj.id}')">
+        <span class="sdot" style="background:${subj.color}"></span>
+        <span class="sname">${subj.name}</span>
+        <span class="scnt">${subj.topics.length}</span>
+        <span class="schev">▼</span>
+      </div>
+      <div class="topics-list">
+        ${subj.topics.map(t=>{const ls=latestByTopic[t.id];return `<div class="topic-row">
+          <span class="tcat">${t.category}</span>
+          <span class="tname">${t.name}</span>
+          ${ls?`<span class="sb ${scCls(ls.mark)}" style="font-size:10.5px">${ls.mark}%</span><span class="tdate">${fmtDate(ls.date)}</span>`:'<span class="tdate">Not studied</span>'}
+        </div>`}).join('')}
+        <div style="padding:6px 17px 10px">
+          <button class="tadd-btn" onclick="openTopicModal('${subj.id}')">+ Add topic</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+function toggleSubj(id){ document.getElementById('sc-'+id).classList.toggle('open'); }
+
+// ── LOG SESSION ────────────────────────────────────────
+function renderLog() {
+  const data=Store.get();
+  document.getElementById('log-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('log-subj').innerHTML='<option value="">Select subject…</option>'+
+    data.subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('log-topic').innerHTML='<option value="">Select topic…</option>';
+  updateMarkDisp(70);
+  document.getElementById('log-slider').value=70;
+  renderLogRecent();
+}
+function updateLogTopics() {
+  const data=Store.get(), sid=document.getElementById('log-subj').value;
+  const subj=data.subjects.find(s=>s.id===sid);
+  const sel=document.getElementById('log-topic');
+  if(!subj){ sel.innerHTML='<option value="">Select topic…</option>'; return; }
+  const cats={};
+  subj.topics.forEach(t=>{ if(!cats[t.category]) cats[t.category]=[]; cats[t.category].push(t); });
+  sel.innerHTML='<option value="">Select topic…</option>'+
+    Object.entries(cats).map(([cat,ts])=>`<optgroup label="${cat}">${ts.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</optgroup>`).join('');
+}
+function updateMarkDisp(v) {
+  v=parseInt(v);
+  document.getElementById('log-mark-disp').textContent=v+'%';
+  document.getElementById('log-slider').style.background=`linear-gradient(to right,${scCol(v)} ${v}%,#1f2235 ${v}%)`;
+}
+function logSession() {
+  const sid=document.getElementById('log-subj').value;
+  const tid=document.getElementById('log-topic').value;
+  const date=document.getElementById('log-date').value;
+  const mark=parseInt(document.getElementById('log-slider').value);
+  const notes=document.getElementById('log-notes').value.trim();
+  if(!sid||!tid||!date){ toast('Please fill in subject, topic and date'); return; }
+  Store.addSession({id:uid(),subjectId:sid,topicId:tid,date,mark,notes});
+  toast('Session logged ✓');
+  document.getElementById('log-notes').value='';
+  renderLogRecent();
+}
+function renderLogRecent() {
+  const data=Store.get();
+  const recent=[...data.sessions].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
+  const el=document.getElementById('log-recent');
+  if(!el) return;
+  el.innerHTML=recent.length?recent.map(s=>{const f=getTopic(data,s.topicId);return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+    <div style="flex:1">
+      <div style="font-weight:600;font-size:12.5px">${f?f.topic.name:'—'}</div>
+      <div style="font-size:11px;color:var(--muted)">${f?f.subj.name:'—'} · ${fmtDate(s.date)}${s.notes?` · <i style="color:var(--dim)">${s.notes.slice(0,60)}${s.notes.length>60?'…':''}</i>`:''}</div>
+    </div>
+    <span class="sb ${scCls(s.mark)}">${s.mark}%</span>
+  </div>`;}).join(''):'<div class="empty">No sessions yet</div>';
+}
+
+// ── GRAPHS ─────────────────────────────────────────────
+function renderGraphs() {
+  const data=Store.get();
+  document.getElementById('g-subj').innerHTML='<option value="">All subjects</option>'+
+    data.subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('g-topic').innerHTML='<option value="">All topics</option>';
+  renderGraph();
+}
+function updateGraphTopics() {
+  const data=Store.get(), sid=document.getElementById('g-subj').value;
+  const subj=data.subjects.find(s=>s.id===sid);
+  const sel=document.getElementById('g-topic');
+  if(!subj){ sel.innerHTML='<option value="">All topics</option>'; }
+  else {
+    const cats={};
+    subj.topics.forEach(t=>{ if(!cats[t.category]) cats[t.category]=[]; cats[t.category].push(t); });
+    sel.innerHTML='<option value="">All topics</option>'+
+      Object.entries(cats).map(([cat,ts])=>`<optgroup label="${cat}">${ts.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</optgroup>`).join('');
+  }
+  renderGraph();
+}
+function renderGraph() {
+  const data=Store.get();
+  const sid=document.getElementById('g-subj').value;
+  const tid=document.getElementById('g-topic').value;
+  let sess=[...data.sessions].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  if(sid) sess=sess.filter(s=>s.subjectId===sid);
+  if(tid) sess=sess.filter(s=>s.topicId===tid);
+
+  const marks=sess.map(s=>s.mark);
+  const avg=marks.length?Math.round(marks.reduce((a,b)=>a+b,0)/marks.length):null;
+  const best=marks.length?Math.max(...marks):null, worst=marks.length?Math.min(...marks):null;
+  const trend=marks.length>=2?marks[marks.length-1]-marks[0]:null;
+  document.getElementById('g-stats').innerHTML=`
+    <div class="gstat"><div class="gstat-val">${avg!=null?avg+'%':'—'}</div><div class="gstat-lbl">Average</div></div>
+    <div class="gstat"><div class="gstat-val" style="color:var(--green)">${best!=null?best+'%':'—'}</div><div class="gstat-lbl">Best</div></div>
+    <div class="gstat"><div class="gstat-val" style="color:var(--red)">${worst!=null?worst+'%':'—'}</div><div class="gstat-lbl">Worst</div></div>
+    <div class="gstat"><div class="gstat-val" style="color:${trend==null?'var(--text)':trend>=0?'var(--green)':'var(--red)'}">
+      ${trend==null?'—':(trend>0?'+':'')+trend+'%'}</div><div class="gstat-lbl">Trend</div></div>
+  `;
+
+  const canvas=document.getElementById('main-chart'), empty=document.getElementById('chart-empty');
+  if(activeChart){ activeChart.destroy(); activeChart=null; }
+  if(!sess.length){ canvas.style.display='none'; empty.style.display='flex';
+    document.getElementById('g-table').innerHTML='<div class="empty">No sessions match this filter</div>'; return; }
+  canvas.style.display='block'; empty.style.display='none';
+
+  const ctx=canvas.getContext('2d');
+  const gridCfg={color:'rgba(31,34,53,.9)'};
+  const tickCfg=(fam,sz)=>({color:'#6b7290',font:{family:fam,size:sz}});
+  const baseOpts={
+    responsive:true,maintainAspectRatio:false,
+    scales:{
+      x:{grid:gridCfg,ticks:tickCfg('Plus Jakarta Sans',11)},
+      y:{min:0,max:100,grid:gridCfg,ticks:{...tickCfg('JetBrains Mono',11),callback:v=>v+'%'}}
+    },
+    plugins:{
+      legend:{display:false},
+      tooltip:{backgroundColor:'#0f1117',borderColor:'#1f2235',borderWidth:1,titleColor:'#eef0f8',bodyColor:'#9699b0',
+        callbacks:{label:c=>` ${c.parsed.y}%`}}
+    }
+  };
+
+  if(tid) {
+    const dm={};
+    sess.forEach(s=>{ if(!dm[s.date]) dm[s.date]=[]; dm[s.date].push(s.mark); });
+    const agg=Object.entries(dm).sort((a,b)=>a[0]<b[0]?-1:1)
+      .map(([d,ms])=>({lbl:fmtDate(d),val:Math.round(ms.reduce((a,b)=>a+b,0)/ms.length)}));
+    const color=(sid?data.subjects.find(s=>s.id===sid)?.color:'#f5b731')||'#f5b731';
+    activeChart=new Chart(ctx,{type:'line',data:{
+      labels:agg.map(a=>a.lbl),
+      datasets:[{data:agg.map(a=>a.val),borderColor:color,backgroundColor:color+'18',fill:true,tension:.35,
+        pointBackgroundColor:agg.map(a=>scCol(a.val)),pointRadius:5,pointHoverRadius:7}]
+    },options:baseOpts});
+  } else {
+    const tm={};
+    sess.forEach(s=>{ if(!tm[s.topicId]) tm[s.topicId]=[]; tm[s.topicId].push(s.mark); });
+    const labels=[],vals=[],bColors=[];
+    for(const [id,ms] of Object.entries(tm)){
+      const f=getTopic(data,id); if(!f) continue;
+      labels.push(f.topic.name.length>28?f.topic.name.slice(0,25)+'…':f.topic.name);
+      vals.push(Math.round(ms.reduce((a,b)=>a+b,0)/ms.length));
+      bColors.push(f.subj.color+'cc');
+    }
+    activeChart=new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:bColors,borderRadius:4,borderSkipped:false}]},options:baseOpts});
+  }
+
+  document.getElementById('g-table').innerHTML=`<table>
+    <thead><tr><th>Date</th><th>Topic</th><th>Subject</th><th>Mark</th><th>Notes</th></tr></thead>
+    <tbody>${[...sess].reverse().map(s=>{const f=getTopic(data,s.topicId);return `<tr>
+      <td style="color:var(--muted)">${fmtDate(s.date)}</td>
+      <td>${f?f.topic.name:'—'}</td>
+      <td><span class="dot" style="background:${f?f.subj.color:'#555'}"></span> ${f?f.subj.name:'—'}</td>
+      <td><span class="sb ${scCls(s.mark)}">${s.mark}%</span></td>
+      <td style="color:var(--muted);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.notes||'—'}</td>
+    </tr>`;}).join('')}</tbody>
+  </table>`;
+}
+
+// ── SUGGESTIONS ────────────────────────────────────────
+function renderSuggestions() {
+  const sugs=getSuggestions();
+  const groups={
+    overdue:{label:'Overdue',cls:'u-overdue',badge:'Overdue',icon:'⚠',items:[]},
+    never:{label:'Never Studied',cls:'u-never',badge:'Start Now',icon:'✦',items:[]},
+    due:{label:'Due Now',cls:'u-due',badge:'Review Now',icon:'◉',items:[]},
+    soon:{label:'Due Soon',cls:'u-soon',badge:'Review Soon',icon:'◷',items:[]},
+    ok:{label:'On Track',cls:'u-ok',badge:'On Track',icon:'✓',items:[]}
+  };
+  sugs.forEach(s=>{ if(groups[s.urgency]) groups[s.urgency].items.push(s); });
+
+  const INTERVALS=[['<50%','1 day','var(--red)'],['50–64%','2 days','var(--orange)'],['65–74%','4 days','var(--gold)'],['75–84%','7 days','var(--blue)'],['85–94%','14 days','var(--green)'],['95–100%','21 days','var(--green)']];
+  const COL={overdue:'var(--red)',never:'var(--purple)',due:'var(--gold)',soon:'var(--blue)',ok:'var(--green)'};
+
+  let html=`<div class="card mb20" style="border-color:rgba(245,183,49,.2);background:var(--goldd)">
+    <div style="display:flex;gap:13px;align-items:flex-start">
+      <div style="font-size:20px;margin-top:1px">◈</div>
+      <div>
+        <div style="font-weight:600;margin-bottom:5px">How Spaced Repetition Works</div>
+        <div style="font-size:12.5px;color:var(--dim);line-height:1.7">Topics are ranked by urgency based on your last mark and when you last studied them. Lower marks mean shorter review intervals so you revisit weak spots more often.</div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          ${INTERVALS.map(([r,d,c])=>`<div style="font-size:11px;background:var(--surf2);padding:3px 9px;border-radius:6px">
+            <span style="color:${c};font-family:'JetBrains Mono',monospace;font-weight:600">${r}</span> → <strong>${d}</strong>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  for(const [key,grp] of Object.entries(groups)){
+    if(!grp.items.length) continue;
+    html+=`<div class="sug-group">
+      <div class="sug-group-title" style="color:${COL[key]}">${grp.icon} ${grp.label} <span style="color:var(--muted);font-weight:400">(${grp.items.length})</span></div>
+      ${grp.items.map(s=>`<div class="sug-card">
+        <span class="sug-sdot" style="background:${s.subj.color}"></span>
+        <div class="sug-info">
+          <div class="sug-topic">${s.topic.name}</div>
+          <div class="sug-meta">${s.subj.name} · ${s.topic.category}${s.lastMark!=null?` · Last: <span style="font-family:'JetBrains Mono',monospace;color:${scCol(s.lastMark)}">${s.lastMark}%</span>`:''}${s.daysSince!=null?` · ${s.daysSince}d ago`:''}${s.interval!=null?` · Review every ${s.interval}d`:''}</div>
+        </div>
+        <span class="urgency ${grp.cls}">${grp.badge}</span>
+      </div>`).join('')}
+    </div>`;
+  }
+  document.getElementById('sug-content').innerHTML=html;
+}
+
+// ── CALENDAR ───────────────────────────────────────────
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-indexed
+let editingEventId = null;
+
+function renderCalendar() {
+  const data = Store.get();
+  const events = data.events || [];
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  // Month label
+  document.getElementById('cal-month-label').textContent =
+    new Date(calYear, calMonth, 1).toLocaleDateString('en-GB', {month:'long', year:'numeric'});
+
+  // Populate subject dropdown in modal
+  const subjSel = document.getElementById('ev-subj');
+  subjSel.innerHTML = '<option value="">No subject</option>' +
+    data.subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+
+  // Build grid
+  const firstDay = new Date(calYear, calMonth, 1);
+  const lastDay  = new Date(calYear, calMonth+1, 0);
+  // Week starts Monday: (0=Sun→6, 1=Mon→0, ...) → (day+6)%7
+  const startOffset = (firstDay.getDay() + 6) % 7;
+
+  // Days from prev month to fill
+  const prevLastDay = new Date(calYear, calMonth, 0).getDate();
+
+  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  let html = DAYS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+
+  // Index events by date string
+  const byDate = {};
+  events.forEach(e => {
+    if(!byDate[e.date]) byDate[e.date] = [];
+    byDate[e.date].push(e);
+  });
+
+  const totalCells = Math.ceil((startOffset + lastDay.getDate()) / 7) * 7;
+
+  for(let i = 0; i < totalCells; i++) {
+    let dateObj, otherMonth = false;
+    if(i < startOffset) {
+      dateObj = new Date(calYear, calMonth-1, prevLastDay - startOffset + i + 1);
+      otherMonth = true;
+    } else if(i >= startOffset + lastDay.getDate()) {
+      dateObj = new Date(calYear, calMonth+1, i - startOffset - lastDay.getDate() + 1);
+      otherMonth = true;
+    } else {
+      dateObj = new Date(calYear, calMonth, i - startOffset + 1);
+    }
+    const dateStr = dateObj.toISOString().split('T')[0];
+    const isToday = dateStr === todayStr;
+    const dayEvts = byDate[dateStr] || [];
+    const MAX_SHOW = 3;
+    const shown = dayEvts.slice(0, MAX_SHOW);
+    const extra = dayEvts.length - MAX_SHOW;
+
+    html += `<div class="cal-day${otherMonth?' other-month':''}${isToday?' today':''}" onclick="calDayClick('${dateStr}')">
+      <div class="cal-day-num">${dateObj.getDate()}</div>
+      <div class="cal-events">
+        ${shown.map(e => {
+          const subj = e.subjectId ? data.subjects.find(s=>s.id===e.subjectId) : null;
+          const style = subj ? `style="background:${subj.color}22;color:${subj.color}"` : '';
+          return `<div class="cal-evt type-${e.type}" ${style} onclick="event.stopPropagation();openEventDetail('${e.id}')" title="${e.title}">${e.title}</div>`;
+        }).join('')}
+        ${extra > 0 ? `<div class="cal-more">+${extra} more</div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('cal-grid').innerHTML = html;
+  renderUpcoming();
+}
+
+function renderUpcoming() {
+  const data = Store.get();
+  const events = data.events || [];
+  const todayStr = new Date().toISOString().split('T')[0];
+  const future = events
+    .filter(e => (e.type==='exam'||e.type==='test') && e.date >= todayStr)
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  const el = document.getElementById('upcoming-list');
+  if(!future.length) { el.innerHTML = '<div class="empty">No upcoming exams or tests</div>'; return; }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  el.innerHTML = future.map(e => {
+    const subj = e.subjectId ? data.subjects.find(s=>s.id===e.subjectId) : null;
+    const evDate = new Date(e.date); evDate.setHours(0,0,0,0);
+    const diff = Math.round((evDate - today) / 864e5);
+    const diffStr = diff === 0 ? '<span style="color:var(--red)">Today</span>'
+      : diff === 1 ? '<span style="color:var(--orange)">Tomorrow</span>'
+      : diff <= 7  ? `<span style="color:var(--gold)">${diff}d</span>`
+      : `<span style="color:var(--muted)">${diff}d</span>`;
+    const typeClass = e.type==='exam' ? 'type-badge-exam' : 'type-badge-test';
+    return `<div class="upcoming-item" onclick="openEventDetail('${e.id}')" style="cursor:pointer">
+      <span class="upcoming-countdown">${diffStr}</span>
+      ${subj ? `<span class="dot" style="background:${subj.color}"></span>` : ''}
+      <div class="upcoming-info">
+        <div class="upcoming-title">${e.title}</div>
+        <div class="upcoming-sub">${subj?subj.name+' · ':''}${fmtDate(e.date)}${e.notes?` · ${e.notes}`:''}</div>
+      </div>
+      <span class="upcoming-type ${typeClass}">${e.type}</span>
+    </div>`;
+  }).join('');
+}
+
+function calShift(dir) {
+  calMonth += dir;
+  if(calMonth > 11){ calMonth = 0; calYear++; }
+  if(calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+function calGoToday() {
+  calYear = new Date().getFullYear();
+  calMonth = new Date().getMonth();
+  renderCalendar();
+}
+function calDayClick(dateStr) {
+  openEventModal(dateStr);
+}
+
+// ── EVENT MODAL ────────────────────────────────────────
+function openEventModal(dateStr) {
+  editingEventId = null;
+  document.getElementById('modal-event-title').textContent = 'Add Event';
+  document.getElementById('ev-save-btn').textContent = 'Add Event';
+  document.getElementById('ev-type').value = 'study';
+  document.getElementById('ev-title').value = '';
+  document.getElementById('ev-notes').value = '';
+  document.getElementById('ev-date').value = dateStr || new Date().toISOString().split('T')[0];
+  // Refresh subject list
+  const data = Store.get();
+  document.getElementById('ev-subj').innerHTML = '<option value="">No subject</option>' +
+    data.subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('ev-subj').value = '';
+  document.getElementById('modal-event').classList.add('open');
+}
+
+function updateEventForm() { /* reserved for future type-specific fields */ }
+
+function saveEvent() {
+  const type  = document.getElementById('ev-type').value;
+  const title = document.getElementById('ev-title').value.trim();
+  const subjId= document.getElementById('ev-subj').value;
+  const date  = document.getElementById('ev-date').value;
+  const notes = document.getElementById('ev-notes').value.trim();
+  if(!title){ toast('Please enter a title'); return; }
+  if(!date) { toast('Please select a date');  return; }
+  Store.addEvent({id:uid(), type, title, subjectId:subjId||null, date, notes});
+  closeModal('modal-event');
+  toast('Event added ✓');
+  renderCalendar();
+}
+
+let detailEventId = null;
+function openEventDetail(id) {
+  const data = Store.get();
+  const e = (data.events||[]).find(x=>x.id===id);
+  if(!e) return;
+  detailEventId = id;
+  const subj = e.subjectId ? data.subjects.find(s=>s.id===e.subjectId) : null;
+  const typeLabel = e.type==='study'?'Study Session':e.type==='exam'?'Exam':'Test';
+  document.getElementById('evd-title').textContent = e.title;
+  document.getElementById('evd-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div><span style="color:var(--muted)">Type: </span>${typeLabel}</div>
+      <div><span style="color:var(--muted)">Date: </span>${fmtDate(e.date)}</div>
+      ${subj?`<div><span style="color:var(--muted)">Subject: </span><span class="dot" style="background:${subj.color};margin-right:4px"></span>${subj.name}</div>`:''}
+      ${e.notes?`<div><span style="color:var(--muted)">Notes: </span>${e.notes}</div>`:''}
+    </div>`;
+  document.getElementById('modal-event-detail').classList.add('open');
+}
+
+function deleteEvent() {
+  if(!detailEventId) return;
+  Store.deleteEvent(detailEventId);
+  closeModal('modal-event-detail');
+  toast('Event deleted');
+  renderCalendar();
+}
+
+
+function openSubjectModal(){ document.getElementById('ms-name').value=''; document.getElementById('modal-subj').classList.add('open'); }
+function openTopicModal(sid){ document.getElementById('mt-name').value=''; document.getElementById('mt-cat').value=''; document.getElementById('mt-subj').value=sid; document.getElementById('modal-topic').classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+function addSubject(){
+  const name=document.getElementById('ms-name').value.trim(), color=document.getElementById('ms-color').value;
+  if(!name){ toast('Please enter a subject name'); return; }
+  Store.addSubject({id:uid(),name,color,topics:[]});
+  closeModal('modal-subj'); toast('Subject added ✓'); renderSubjects();
+}
+function addTopic(){
+  const name=document.getElementById('mt-name').value.trim();
+  const cat=document.getElementById('mt-cat').value.trim()||'General';
+  const sid=document.getElementById('mt-subj').value;
+  if(!name){ toast('Please enter a topic name'); return; }
+  Store.addTopic(sid,{id:uid(),name,category:cat});
+  closeModal('modal-topic'); toast('Topic added ✓'); renderSubjects();
+}
+
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); }));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open')); });
+
+// ── MOBILE SIDEBAR ────────────────────────────────────
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-backdrop').classList.toggle('open'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-backdrop').classList.remove('open'); }
+
+
+init();
+</script>
+</body>
+</html>
